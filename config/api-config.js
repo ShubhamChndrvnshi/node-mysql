@@ -1,17 +1,11 @@
 var express = require("express");
-var app = express();
 var path  = require('path');
 const mysql = require('mysql');
 const jwt = require('jsonwebtoken');
 var db = require('./database');
 var dbfunc = require('./db-function');
-var http  = require('http')
-var bodyParser = require('body-parser');
-var UserRoute = require('../app/routes/user.route');
-var AuthenticRoute = require('../app/routes/authentic.route');
-var errorCode = require('../common/error-code')
-var errorMessage = require('../common/error-methods')
-var checkToken = require('./secureRoute');
+var getAuth = require('../config/getAuth');
+const logger = require("../common/logger")
 
 // var schedule = require('node-schedule');
  
@@ -20,50 +14,57 @@ var checkToken = require('./secureRoute');
 // });
 
 dbfunc.connectionCheck.then((data) =>{
-    //console.log(data);
+  logger.info(data);
  }).catch((err) => {
-     console.log(err);
+  logger.error(err);
  });
+
+
+
+var app = express();
+
+app.use(compression({ filter: shouldCompress }));
  
- app.use(function(req, res, next) {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'PUT, GET, POST, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type');
-  next();
-});
-
-app.use(bodyParser.json());
-
-var router = express.Router();
-app.use('/api',router);
-AuthenticRoute.init(router);
-
-var secureApi = express.Router();
-
+function shouldCompress (req, res) {
+	if (req.headers["x-no-compression"]) {
+		// don't compress responses with this request header
+		return false;
+	}
+ 
+	// fallback to standard filter function
+	return compression.filter(req, res);
+}
 //set static folder
 app.use(express.static(path.join(__dirname, 'public')));
+//To allow cross-origin requests
+app.use(cors());
+// view engine setup
 
-//body parser middleware
-
-app.use('/secureApi',secureApi);
-secureApi.use(checkToken);
-
-
-app.use(function (err, req, res, next) {
-  console.error(err.stack);
-  res.status(500).send('Something broke!');
-});
-
-
-// index route
-app.get('/', (req,res) => {
-    res.send('hello world');
-});
-
-var ApiConfig = {
-  app: app
+//don't show the log when it is test
+if(process.env.NODE_ENV !== "test") {
+	app.use(require("../common/httpLogger"));
 }
+app.use(express.json({limit: "50mb"}));
+app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
 
-UserRoute.init(secureApi);
+app.use(session({ secret: "SECRET", resave: true,
+	saveUninitialized: true }));
 
-module.exports = ApiConfig;
+
+//Route Prefixes
+app.use("/wallet", getAuth, indexRouter);
+app.use("/api/", getAuth, apiRouter);
+
+// throw 404 if URL not found
+app.all("*", function(req, res) {
+	res.sendFile(path.join(__dirname+ "/public/404.html"));
+});
+
+app.use((err, req, res) => {
+	if(err.name == "UnauthorizedError"){
+		return apiResponse.unauthorizedResponse(res, err.message);
+	}
+});
+
+module.exports = app;
