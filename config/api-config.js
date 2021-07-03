@@ -4,7 +4,6 @@ const mysql = require('mysql');
 const jwt = require('jsonwebtoken');
 var db = require('./database');
 var dbfunc = require('./db-function');
-var getAuth = require('./getAuth');
 const logger = require("../common/logger")
 var compression = require("compression");
 var cors = require("cors");
@@ -59,8 +58,8 @@ app.use(session({ secret: "SECRET", resave: true,
 
 
 //Route Prefixes
-app.use("/wallet", getAuth, walletRouter);
-app.use("/api/v2", getAuth, thirdPartyRouter);
+app.use("/wallet", walletRouter);
+app.use("/api/v2", thirdPartyRouter);
 
 
 // throw 404 if URL not found

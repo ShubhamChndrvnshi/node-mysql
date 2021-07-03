@@ -1,15 +1,6 @@
 var userModel = require("../models/wallet.model.js");
 
-
-var userService = {
-    getAllUser: getAllUser,
-    getUserById:getUserById,
-    addUser: addUser,
-    updateUser:updateUser,
-    deleteUser:deleteUser
-}
-
-function addUser(userData) {
+exports.balance = (req, res) => {
     return new Promise((resolve,reject) => {
         userModel.addUser(userData).then((data)=>{
             resolve(data);
@@ -17,11 +8,9 @@ function addUser(userData) {
             reject(err);
         })
     })
-   
 }
 
-
-function updateUser(id,userData,callback) {
+exports.updateUser = (id,userData,callback) => {
     return new Promise((resolve,reject) => {
         userModel.updateUser(id,userData).then((data)=>{
             resolve(data);
@@ -29,10 +18,9 @@ function updateUser(id,userData,callback) {
             reject(err);
         })
     })
-     
 }
 
-function deleteUser(id) {
+exports.deleteUser = (id) => {
     return new Promise((resolve,reject) => {
         userModel.deleteUser(id).then((data)=>{
             resolve(data);
@@ -42,7 +30,7 @@ function deleteUser(id) {
     })
 }
 
-function getAllUser() {
+exports.getAllUser = () => {
     return new Promise((resolve,reject) => {
         userModel.getAllUser().then((data)=>{
             resolve(data);
@@ -52,7 +40,7 @@ function getAllUser() {
     });
 }
 
-function getUserById(id) {
+exports.getUserById = (id) =>{
     return new Promise((resolve,reject) => {
         userModel.getUserById(id).then((data)=>{
             resolve(data);
@@ -63,5 +51,4 @@ function getUserById(id) {
 }
 
 
-module.exports = userService;
 

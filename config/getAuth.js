@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 const secret = process.env.JWT_SECRET;
 const apiResponse = require("../common/apiResponse");
 
-module.exports = function getAuth(req, res, next) {
+const getAuth =  (req, res, next) => {
   //   var token = req.headers['token'];
   //   if(token) {
   //     jwt.verify(token, 'my_secret_key',(err,decode)=>{
@@ -24,7 +24,8 @@ module.exports = function getAuth(req, res, next) {
   next();
   }
 
-// module.exports = getAuth;
+module.exports = getAuth;
+
 
 
   
