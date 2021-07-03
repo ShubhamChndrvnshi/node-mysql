@@ -9,8 +9,3 @@ let connObj = {
     database: process.env.DB
 };
 module.exports = mysql.createPool(connObj)
-
-
-
-
-

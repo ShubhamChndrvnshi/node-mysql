@@ -10,6 +10,8 @@ var compression = require("compression");
 var cors = require("cors");
 var cookieParser = require("cookie-parser");
 var session = require("express-session");
+const walletRouter = require("../app/routes/thirdParty.route");
+const thirdPartyRouter = require("../app/routes/wallet.route");
 
 // var schedule = require('node-schedule');
  
@@ -57,15 +59,9 @@ app.use(session({ secret: "SECRET", resave: true,
 
 
 //Route Prefixes
-app.use("/wallet", getAuth, indexRouter);
-app.use("/api/", getAuth, apiRouter);
+app.use("/wallet", getAuth, walletRouter);
+app.use("/api/v2", getAuth, thirdPartyRouter);
 
-function indexRouter(){
-
-}
-function apiRouter(){
-
-}
 
 // throw 404 if URL not found
 app.all("*", function(req, res) {

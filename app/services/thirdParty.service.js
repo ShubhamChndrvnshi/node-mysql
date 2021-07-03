@@ -1,4 +1,4 @@
-var authenticModel = require("../models/authentic.model");
+var authenticModel = require("../models/thirdParty.model");
 
 
 var authenticService = {
