@@ -14,6 +14,7 @@ const getAuth =  (req, res, next) => {
           logger.info(user);
           const jwtPayload = {
             id: user.id,
+            user_id: user.id,
             first_name: user.first_name,
             last_name: user.last_name,
           };
@@ -44,7 +45,7 @@ const getAuth =  (req, res, next) => {
         logger.error("user data fetch error");
         logger.error(err);
       })
-    }else if(req.headers['Casino-Signature']){
+    }else if(req.headers['casino-signature']){
       next();
     }else{
       res.json({"code":404,

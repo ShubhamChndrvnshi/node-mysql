@@ -8,11 +8,12 @@ var walletModel = {
    deleteWallet:deleteWallet,
    getWalletByUser: getWalletByUser,
    getWalletByUserToken: getWalletByUserToken,
+   getUserExposure: getUserExposure,
 }
 
 function getWalletByUserByPassword(payload) {
     return new Promise((resolve,reject) => {
-        db.query("SELECT * FROM client WHERE id = '"+payload['user_id']+"' AND password = "+payload['password'],(error,rows,fields)=>{
+        db.query("SELECT * FROM client WHERE id = '"+payload['user_id']+"' AND password = '"+payload['password']+"'",(error,rows,fields)=>{
             if(!!error) {
                 dbFunc.connectionRelease;
                 reject(error);
@@ -27,8 +28,25 @@ function getWalletByUserByPassword(payload) {
 
 function getWalletByUser(payload) {
     return new Promise((resolve,reject) => {
-        db.query("SELECT * FROM client WHERE username ="+payload['user'],(error,rows,fields)=>{
+        db.query("SELECT * FROM client WHERE id = '"+payload['user_id']+"'",(error,rows,fields)=>{
             if(!!error) {
+                dbFunc.connectionRelease;
+                reject(error);
+            } else {
+                dbFunc.connectionRelease;
+                resolve(rows);
+            }
+       });
+    });  
+}
+
+function getUserExposure(payload) {
+    return new Promise((resolve,reject) => {
+        let query = "SELECT SUM(exposure) AS exposure from exposure Where clientId ='"+payload['user_id']+"' AND status = 1";
+        // console.log(query);
+        db.query(query,(error,rows,fields)=>{
+            if(!!error) {
+                // console.log(error);
                 dbFunc.connectionRelease;
                 reject(error);
             } else {
@@ -41,7 +59,7 @@ function getWalletByUser(payload) {
 
 function getWalletByUserToken(payload) {
     return new Promise((resolve,reject) => {
-        db.query("SELECT * FROM client WHERE username ="+payload['user']+" AND token = "+payload['token'],(error,rows,fields)=>{
+        db.query("SELECT * FROM client WHERE id ='"+payload['user_id']+"' AND token = '"+payload['token']+"'",(error,rows,fields)=>{
             if(!!error) {
                 dbFunc.connectionRelease;
                 reject(error);
