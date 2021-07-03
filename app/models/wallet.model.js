@@ -1,8 +1,8 @@
 var db = require('../../config/database');
 var dbFunc = require('../../config/db-function');
 
-var userModel = {
-   getAllWallet:getAllWallet,
+var walletModel = {
+   getWalletByUserByPassword:getWalletByUserByPassword,
    addWallet:addWallet,
    updateWallet:updateWallet,
    deleteWallet:deleteWallet,
@@ -10,23 +10,24 @@ var userModel = {
    getWalletByUserToken: getWalletByUserToken,
 }
 
-function getAllWallet() {
+function getWalletByUserByPassword(payload) {
     return new Promise((resolve,reject) => {
-        db.query(`CALL get_user()`,(error,rows,fields)=>{
+        db.query("SELECT * FROM client WHERE id = '"+payload['user_id']+"' AND password = "+payload['password'],(error,rows,fields)=>{
             if(!!error) {
                 dbFunc.connectionRelease;
                 reject(error);
             } else {
+                // console.log(fields)
                 dbFunc.connectionRelease;
-                resolve(rows[0]);
+                resolve(rows);
             }
        });
-    });
+    });  
 }
 
 function getWalletByUser(payload) {
     return new Promise((resolve,reject) => {
-        db.query("SELECT * FROM tokens WHERE username ="+payload['user'],(error,rows,fields)=>{
+        db.query("SELECT * FROM client WHERE username ="+payload['user'],(error,rows,fields)=>{
             if(!!error) {
                 dbFunc.connectionRelease;
                 reject(error);
@@ -40,7 +41,7 @@ function getWalletByUser(payload) {
 
 function getWalletByUserToken(payload) {
     return new Promise((resolve,reject) => {
-        db.query("SELECT * FROM tokens WHERE username ="+payload['user']+" AND token = "+payload['token'],(error,rows,fields)=>{
+        db.query("SELECT * FROM client WHERE username ="+payload['user']+" AND token = "+payload['token'],(error,rows,fields)=>{
             if(!!error) {
                 dbFunc.connectionRelease;
                 reject(error);

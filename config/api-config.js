@@ -58,8 +58,8 @@ app.use(session({ secret: "SECRET", resave: true,
 
 
 //Route Prefixes
-app.use("/wallet", walletRouter);
-app.use("/api/v2", thirdPartyRouter);
+app.use("/wallet", thirdPartyRouter);
+app.use("/api/v2", walletRouter);
 
 
 // throw 404 if URL not found
