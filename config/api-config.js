@@ -4,8 +4,12 @@ const mysql = require('mysql');
 const jwt = require('jsonwebtoken');
 var db = require('./database');
 var dbfunc = require('./db-function');
-var getAuth = require('../config/getAuth');
+var getAuth = require('./getAuth');
 const logger = require("../common/logger")
+var compression = require("compression");
+var cors = require("cors");
+var cookieParser = require("cookie-parser");
+var session = require("express-session");
 
 // var schedule = require('node-schedule');
  
@@ -14,7 +18,7 @@ const logger = require("../common/logger")
 // });
 
 dbfunc.connectionCheck.then((data) =>{
-  logger.info(data);
+  logger.info(`DB connection status: ${data}`);
  }).catch((err) => {
   logger.error(err);
  });
@@ -55,6 +59,13 @@ app.use(session({ secret: "SECRET", resave: true,
 //Route Prefixes
 app.use("/wallet", getAuth, indexRouter);
 app.use("/api/", getAuth, apiRouter);
+
+function indexRouter(){
+
+}
+function apiRouter(){
+
+}
 
 // throw 404 if URL not found
 app.all("*", function(req, res) {

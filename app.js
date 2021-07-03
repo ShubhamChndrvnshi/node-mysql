@@ -1,7 +1,7 @@
-const apis = require("./config/api-config");
+const app = require("./config/api-config");
 require("dotenv").config();
-const PORT = 9890;
+const PORT = process.env.PORT || 9890;
 
-apis.app.listen(process.env.PORT || PORT, function() {
+app.listen( PORT, function() {
     console.log("server connected to port " + PORT);
 });

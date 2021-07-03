@@ -24,7 +24,7 @@ module.exports = function getAuth(req, res, next) {
   next();
   }
 
-module.exports = getAuth;
+// module.exports = getAuth;
 
 
   
