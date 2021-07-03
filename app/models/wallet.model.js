@@ -4,7 +4,7 @@ var dbFunc = require('../../config/db-function');
 var walletModel = {
    getWalletByUserByPassword:getWalletByUserByPassword,
    addWallet:addWallet,
-   updateWallet:updateWallet,
+   updateUserToken:updateUserToken,
    deleteWallet:deleteWallet,
    getWalletByUser: getWalletByUser,
    getWalletByUserToken: getWalletByUserToken,
@@ -55,7 +55,7 @@ function getWalletByUserToken(payload) {
 
 function addWallet(user) {
      return new Promise((resolve,reject) => {
-         db.query("INSERT INTO test(name,age,state,country)VALUES('"+user.name+"','"+user.age+"','"+user.state+"','"+user.country+"')",(error,rows,fields)=>{
+         db.query("INSERT INTO client(name,age,state,country)VALUES('"+user.name+"','"+user.age+"','"+user.state+"','"+user.country+"')",(error,rows,fields)=>{
             if(error) {
                 dbFunc.connectionRelease;
                 reject(error);
@@ -68,9 +68,9 @@ function addWallet(user) {
 }
 
 
-function updateWallet(id,user) {
+function updateUserToken(id,token) {
     return new Promise((resolve,reject) => {
-        db.query("UPDATE test set name='"+user.name+"',age='"+user.age+"',state='"+user.state+"',country='"+user.country+"' WHERE id='"+id+"'",(error,rows,fields)=>{
+        db.query("UPDATE client set token='"+token+"' WHERE id='"+id+"'",(error,rows,fields)=>{
             if(!!error) {
                 dbFunc.connectionRelease;
                 reject(error);
@@ -84,7 +84,7 @@ function updateWallet(id,user) {
 
 function deleteWallet(id) {
    return new Promise((resolve,reject) => {
-        db.query("DELETE FROM test WHERE id='"+id+"'",(error,rows,fields)=>{
+        db.query("DELETE FROM client WHERE id='"+id+"'",(error,rows,fields)=>{
             if(!!error) {
                 dbFunc.connectionRelease;
                 reject(error);
