@@ -14,7 +14,6 @@ const getAuth =  (req, res, next) => {
           logger.info(user);
           const jwtPayload = {
             id: user.id,
-            token: user.token,
             first_name: user.first_name,
             last_name: user.last_name,
           };
