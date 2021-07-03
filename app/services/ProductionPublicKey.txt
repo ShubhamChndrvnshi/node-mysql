@@ -1,3 +1,6 @@
-{
-    "key": "ProductionPublicKey"
-}
+-----BEGIN PUBLIC KEY-----
+MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCs23Src06yYuSoDKxWsIkswUwA
+qzF38Wulwvx5a3HyGf0ITSrdxHQKNeeBceBYuLyLF9+7et+R95t9MXuNXDDDd4ua
+VIpLoAMpiEvikLJeos3y78dcWbf61ufLfjFO5HvOVs7qoN8OeJap7T0cNXHkNjrp
+qphfIZ8TnvHRnicewQIDAQAB
+-----END PUBLIC KEY-----
