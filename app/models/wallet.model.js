@@ -12,12 +12,39 @@ const walletModel = {
    getTransactionByReqUUID: getTransactionByReqUUID,
    getTransactionByTransactionUUID: getTransactionByTransactionUUID,
    getTokenByUserToken: getTokenByUserToken,
+   upsertUserToken: upsertUserToken,
+   expireUserToken: expireUserToken,
 }
 
 
-function updateUserTransaction(updateObj) {
+function expireUserToken(token) {
     return new Promise((resolve,reject) => {
-        db.query("UPDATE transactions set token='"+token+"' WHERE id='"+id+"'",(error,rows,fields)=>{
+        db.query("UPDATE tokens set expired='Y' WHERE token='"+token+"'",(error,rows,fields)=>{
+            if(!!error) {
+                dbFunc.connectionRelease;
+                reject(error);
+            } else {
+                dbFunc.connectionRelease;
+                resolve(rows);
+            }
+       });    
+    })
+}
+
+
+function upsertUserToken(payload) {
+    let fields = "";
+    let values = "";
+    Object.entries(payload).forEach(
+        ([key, value]) => {
+            fields = fields + key+ ","
+            values = values + value+ ","
+        }
+    );
+    fields = fields.slice(0, -1);
+    values = values.slice(0, -1);
+    return new Promise((resolve,reject) => {
+        db.query(`INSERT IGNORE INTO tokens(${fields}) VALUES (${values})`,(error,rows,fields)=>{
             if(!!error) {
                 dbFunc.connectionRelease;
                 reject(error);

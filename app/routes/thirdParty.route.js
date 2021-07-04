@@ -12,9 +12,3 @@ router.get("/game/list",thirdPartyService.gameList);
 router.get("/game/url",thirdPartyService.gameUrl);
 
 module.exports = router;
-
-
-
-
-
-
