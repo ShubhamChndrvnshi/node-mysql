@@ -5,10 +5,9 @@ const router = express.Router();
 
 router.post("/balance", walletService.balance);
 
-router.post("/bet",walletService.bet);
+router.post("/bet",walletService.debit);
 
-// //Logged user can get it's wishlisted properties
-// router.post("/get",);
+router.post("/win",walletService.credit);
 
 
 module.exports = router;

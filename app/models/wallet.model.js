@@ -14,6 +14,22 @@ const walletModel = {
    getTokenByUserToken: getTokenByUserToken,
 }
 
+
+function updateUserTransaction(updateObj) {
+    return new Promise((resolve,reject) => {
+        db.query("UPDATE transactions set token='"+token+"' WHERE id='"+id+"'",(error,rows,fields)=>{
+            if(!!error) {
+                dbFunc.connectionRelease;
+                reject(error);
+            } else {
+                dbFunc.connectionRelease;
+                resolve(rows);
+            }
+       });    
+    })
+}
+
+
 function getTokenByUserToken(payload) {
     return new Promise((resolve,reject) => {
         db.query("SELECT * FROM Tokens WHERE username ='"+payload['user']+"' AND token = '"+payload['token']+"'",(error,rows,fields)=>{
