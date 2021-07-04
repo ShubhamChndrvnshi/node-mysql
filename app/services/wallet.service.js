@@ -7,47 +7,27 @@ const axios = require('axios');
 const fs = require("fs");
 const path = require("path");
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
 
 let public_keyPath = path.resolve("./app/services/ProductionPublicKey.txt");
 let private_keyPath = path.resolve("./app/services/ProductionPrivateKey.txt");
 let secret_keyPath = path.resolve("./app/services/SecretKey.txt");
 
-let public_key = fs.readFile("./ProductionPrivateKey.txt", () => { });
-let private_key = fs.readFile("./ProductionPrivateKey.txt", () => { });
-let secret_key = fs.readFile("./SecretKey.txt", () => { });
-
-fs.readFile(public_keyPath, 'utf8', (err, data) => {
-    if (err) {
-        console.error(err)
-        return
-    }
-    public_key = data;
-    // new NodeRSA(data);
-})
-
-fs.readFile(private_keyPath, 'utf8', (err, data) => {
-    if (err) {
-        console.error(err)
-        return
-    }
-    private_key = data;
-})
-fs.readFile(secret_keyPath, 'utf8', (err, data) => {
-    if (err) {
-        console.error(err)
-        return
-    }
-    secret_key = data;
-})
+let public_key = new NodeRSA(fs.readFileSync(public_keyPath));
+let private_key = new NodeRSA(fs.readFileSync(private_keyPath));
+let secret_key = fs.readFile(secret_keyPath, () => { });
 
 // username flied not found, so using id in place of username
 exports.balance = [
     getAuth,
     (req, res) => {
+        console.log(req.headers)
         let headers = req.headers['casino-signature'];
+        console.log(headers);
         let payload = req.body;
 
-        let verification = true || verify_signature(payload, headers, public_key);
+        let verification =  verify_signature(payload, headers);
+        console.log(verification);
         if (verification) {
             try {
                 // let token = db['tokens'].find_one({'username': payload['user'], 'token': payload['token']}, {'expired': 1, '_id': 0})
@@ -151,7 +131,7 @@ exports.bet = [
     getAuth,
     (req, res) => {
         let date_time = new Date()
-        let headers = req.headers['Casino-Signature']
+        let headers = req.headers['casino-signature']
         let payload = req.body;
         let verification = true || verify_signature(payload, headers, private_key);
 
@@ -396,39 +376,19 @@ exports.getUserById = (id) => {
     });
 }
 
-function verify_signature(data, signature, key) {
+function verify_signature(data, signature) {
     try {
-        const decryptedData = crypto.privateDecrypt(
-            {
-                key: key,
-                // In order to decrypt the data, we need to specify the
-                // same hashing function and padding scheme that we used to
-                // encrypt the data in the previous step
-                padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
-                oaepHash: "sha256",
-            },
-            signature
-        );
-        console.log("signature", signature);
-
-        console.log("decryptedData", decryptedData);
-
-        if (decryptedData == data.token) {
+        const decryptedData =JSON.parse(private_key.decrypt(signature,"utf8"))
+        // console.log("decoded",decryptedData);
+        // console.log("data",data)
+        if (decryptedData.token == data.token && decryptedData.user_id == data.user_id) {
             return true;
         } else {
             return false;
         }
-        // let signer = new NodeRSA(key, "pkcs1");
-        // let digest = new NodeRSA(data, "sha256");
-        // console.log("signer", signer);
-        // console.log("digest", digest);
-        // // digest.update(data)
-        // if (signer.verify(digest, Buffer.from(signature, 'base64'))) {
-        //     return true
-        // }
-        // return false;
     }
     catch (err) {
+        console.log(err);
         return false;
     }
 }

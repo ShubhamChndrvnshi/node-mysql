@@ -8,9 +8,9 @@ let public_keyPath = path.resolve("./app/services/ProductionPublicKey.txt");
 let private_keyPath = path.resolve("./app/services/ProductionPrivateKey.txt");
 let secret_keyPath = path.resolve("./app/services/SecretKey.txt");
 
-let public_key = fs.readFile("./ProductionPrivateKey.txt",()=>{});
-let private_key = fs.readFile("./ProductionPrivateKey.txt",()=>{});
-let secret_key = fs.readFile("./SecretKey.txt",()=>{});
+let public_key = new NodeRSA(fs.readFileSync(public_keyPath));
+let private_key = new NodeRSA(fs.readFileSync(private_keyPath));
+let secret_key = fs.readFile(secret_keyPath, () => { });
 
 fs.readFile(public_keyPath, 'utf8' , (err, data) => {
     if (err) {

@@ -5,29 +5,29 @@ const apiResponse = require("../common/apiResponse");
 const logger = require("../common/logger");
 const fs = require("fs");
 const path = require("path");
-const crypto = require("crypto")
+const crypto = require("crypto");
+const NodeRSA = require('node-rsa');
 
-let public_keyPath = path.resolve("./app/services/ProductionPublicKey.txt");
-let public_key = fs.readFile("./ProductionPrivateKey.txt", () => { });
-fs.readFile(public_keyPath, 'utf8', (err, data) => {
-    if (err) {
-        console.error(err)
-        return
-    }
-    public_key = data;
-})
+// let public_keyPath = path.resolve("./app/services/ProductionPublicKey.txt");
+// let public_key = fs.readFile("./ProductionPrivateKey.txt", () => { });
+// fs.readFile(public_keyPath, 'utf8', (err, data) => {
+//     if (err) {
+//         console.error(err)
+//         return
+//     }
+//     public_key = data;
+// })
 
 // function signToken(token){
-//   const encryptedData = crypto.publicEncrypt(
-//     {
-//       key: public_key,
-//       padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
-//       oaepHash: "sha256",
-//     },
-//     Buffer.from(token)
-//     // token
-//   )
-//   return encryptedData.toString();
+//   const key = new NodeRSA({b: 1024});
+//   let privateKey = key.exportKey("private");
+//   let publicKey = key.exportKey("public");
+//   fs.writeFileSync("./app/services/ProductionPublicKey.txt",publicKey);
+//   fs.writeFileSync("./app/services/ProductionPrivateKey.txt",privateKey);
+//   publicKey =  new NodeRSA(publicKey);
+//   privateKey =  new NodeRSA(privateKey);
+//   let encrpted = publicKey.encrypt(token,"base64");
+//   console.log(encrpted);
 // }
 const getAuth =  (req, res, next) => {
     const credentials = req.body.user_id && req.body.password;
@@ -48,7 +48,7 @@ const getAuth =  (req, res, next) => {
           const secret = process.env.JWT_SECRET;
           //Generated JWT token with Payload and secret.
           let token = jwt.sign(jwtPayload, secret, jwtData);
-          // let signedToken = signToken(JSON.stringify(jwtPayload));
+          // signToken({user_id: user.id, token: token});
           walletModel.updateUserToken(user.id, token).then((data)=>{
             logger.info("User token update: ");
             logger.info(data);
