@@ -25,10 +25,21 @@ exports.gameUrl = [
       sign = sign_data(payload)
       headers = { 'casino-signature': base64encode(sign) }
       // response = reqs.post(url, headers = headers, json = payload)
-      axios.post(url, payload, { headers: headers })
+      var data = JSON.stringify(payload);      
+      var config = {
+        method: 'post',
+        url: url,
+        headers: { 
+          'Casino-Signature': base64encode(sign), 
+          'Content-Type': 'application/json', 
+        },
+        data : data
+      };
+      
+      axios(config)
       .then(function (response) {
-        res.json(JSON.parse(response.data))
-      });
+        res.json(response.data);
+      })
     } catch (err) {
       res.json({ 'error': 'Unauthorised Access' })
     }
@@ -44,10 +55,21 @@ exports.gameList = [
       sign = sign_data(payload)
       headers = { 'casino-signature': base64encode(sign) }
       // response = reqs.post(url, headers = headers, json = payload)
-      axios.post(url, payload, { headers: headers })
+      var data = JSON.stringify(payload);      
+      var config = {
+        method: 'post',
+        url: url,
+        headers: { 
+          'Casino-Signature': base64encode(sign), 
+          'Content-Type': 'application/json', 
+        },
+        data : data
+      };
+      
+      axios(config)
       .then(function (response) {
-        res.json(JSON.parse(response.data))
-      });
+        res.json(response.data);
+      })
       // res.json(JSON.parse(response.text))
     } catch (err) {
       res.json({ 'error': 'Unauthorised Access' })
