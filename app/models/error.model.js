@@ -1,7 +1,7 @@
-var db = require('../../config/database');
-var dbFunc = require('../../config/db-function');
+const db = require('../../config/database');
+const dbFunc = require('../../config/db-function');
 
-var errorModel = {
+const errorModel = {
    insertError:insertError,
    updateUserToken:updateUserToken,
    deleteWallet:deleteWallet,

@@ -1,8 +1,8 @@
-var db = require('../../config/database');
-var dbFunc = require('../../config/db-function');
+const db = require('../../config/database');
+const dbFunc = require('../../config/db-function');
 const bcrypt = require('bcrypt');
 
-var authenticModel = {
+const authenticModel = {
     authentic: authentic,
     signup: signup
 }

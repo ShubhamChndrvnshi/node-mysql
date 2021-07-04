@@ -1,14 +1,14 @@
-var express = require("express");
-var path  = require('path');
+const express = require("express");
+const path  = require('path');
 const mysql = require('mysql');
 const jwt = require('jsonwebtoken');
-var db = require('./database');
-var dbfunc = require('./db-function');
+const db = require('./database');
+const dbfunc = require('./db-function');
 const logger = require("../common/logger")
-var compression = require("compression");
-var cors = require("cors");
-var cookieParser = require("cookie-parser");
-var session = require("express-session");
+const compression = require("compression");
+const cors = require("cors");
+const cookieParser = require("cookie-parser");
+const session = require("express-session");
 const walletRouter = require("../app/routes/thirdParty.route");
 const thirdPartyRouter = require("../app/routes/wallet.route");
 
@@ -26,7 +26,7 @@ dbfunc.connectionCheck.then((data) =>{
 
 
 
-var app = express();
+const app = express();
 
 app.use(compression({ filter: shouldCompress }));
  

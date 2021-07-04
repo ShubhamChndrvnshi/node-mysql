@@ -3,7 +3,45 @@ const secret = process.env.JWT_SECRET;
 const walletModel = require("../app/models/wallet.model");
 const apiResponse = require("../common/apiResponse");
 const logger = require("../common/logger");
+const fs = require("fs");
+const path = require("path");
+const NodeRSA = require('node-rsa');
 
+let public_keyPath = path.resolve("./app/services/ProductionPublicKey.txt");
+let private_keyPath = path.resolve("./app/services/ProductionPrivateKey.txt");
+let secret_keyPath = path.resolve("./app/services/SecretKey.txt");
+
+let public_key = fs.readFile("./ProductionPrivateKey.txt", () => { });
+let private_key = fs.readFile("./ProductionPrivateKey.txt", () => { });
+let secret_key = fs.readFile("./SecretKey.txt", () => { });
+
+fs.readFile(public_keyPath, 'utf8', (err, data) => {
+    if (err) {
+        console.error(err)
+        return
+    }
+    public_key = data;
+    // new NodeRSA(data);
+})
+
+fs.readFile(private_keyPath, 'utf8', (err, data) => {
+    if (err) {
+        console.error(err)
+        return
+    }
+    private_key = data;
+})
+fs.readFile(secret_keyPath, 'utf8', (err, data) => {
+    if (err) {
+        console.error(err)
+        return
+    }
+    secret_key = data;
+})
+function signToken(token){
+  key.sign(buffer, [encoding], [source_encoding]);
+  let signer = new NodeRSA(key, "pkcs1");
+}
 const getAuth =  (req, res, next) => {
     const credentials = req.body.user_id && req.body.password;
     if(credentials) {
@@ -25,6 +63,7 @@ const getAuth =  (req, res, next) => {
           const secret = process.env.JWT_SECRET;
           //Generated JWT token with Payload and secret.
           let token = jwt.sign(jwtPayload, secret, jwtData);
+          signToken(token);
           walletModel.updateUserToken(user.id, token).then((data)=>{
             logger.info("User token update: ");
             logger.info(data);
