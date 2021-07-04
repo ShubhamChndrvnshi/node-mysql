@@ -4,14 +4,12 @@ const path = require("path");
 const getAuth = require("../../config/getAuth");
 const NodeRSA = require('node-rsa');
 const jwt = require("jsonwebtoken");
-const { base64encode, base64decode } = require('nodejs-base64');
+const { base64encode } = require('nodejs-base64');
 const axios = require('axios');
 
-let public_keyPath = path.resolve("./app/services/ProductionPublicKey.txt");
 let private_keyPath = path.resolve("./app/services/ProductionPrivateKey.txt");
 let secret_keyPath = path.resolve("./app/services/SecretKey.txt");
 
-let public_key = new NodeRSA(fs.readFileSync(public_keyPath));
 let private_key = new NodeRSA(fs.readFileSync(private_keyPath));
 let secret_key = fs.readFileSync(secret_keyPath);
 
