@@ -11,6 +11,7 @@ const cookieParser = require("cookie-parser");
 const session = require("express-session");
 const walletRouter = require("../app/routes/thirdParty.route");
 const thirdPartyRouter = require("../app/routes/wallet.route");
+const indexRouter  = require("../app/routes/index.route");
 
 // var schedule = require('node-schedule');
  
@@ -60,11 +61,11 @@ app.use(session({ secret: "SECRET", resave: true,
 //Route Prefixes
 app.use("/wallet", thirdPartyRouter);
 app.use("/api/v2", walletRouter);
-
+app.use("/", indexRouter);
 
 // throw 404 if URL not found
 app.all("*", function(req, res) {
-	res.sendFile(path.join(__dirname+ "/public/404.html"));
+	res.sendFile(path.join(__dirname+ "/../public/404.html"));
 });
 
 app.use((err, req, res) => {
