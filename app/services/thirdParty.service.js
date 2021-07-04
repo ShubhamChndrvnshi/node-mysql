@@ -30,7 +30,7 @@ exports.gameUrl = [
         method: 'post',
         url: url,
         headers: { 
-          'Casino-Signature': base64encode(sign), 
+          'casino-signature': base64encode(sign), 
           'Content-Type': 'application/json', 
         },
         data : data
@@ -60,7 +60,7 @@ exports.gameList = [
         method: 'post',
         url: url,
         headers: { 
-          'Casino-Signature': base64encode(sign), 
+          'casino-signature': base64encode(sign), 
           'Content-Type': 'application/json', 
         },
         data : data
