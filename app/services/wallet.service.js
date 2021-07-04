@@ -1,4 +1,5 @@
-var walletModel = require("../models/wallet.model.js");
+const walletModel = require("../models/wallet.model.js");
+const userModel = require("../models/user.model");
 const errorModel = require("../models/error.model");
 const getAuth = require("../../config/getAuth");
 const NodeRSA = require('node-rsa');
@@ -43,10 +44,10 @@ fs.readFile(secret_keyPath, 'utf8', (err, data) => {
 exports.balance = [
     getAuth,
     (req, res) => {
-        let headers = req.headers['casino-signature'] || Buffer.from(req.headers['casino-signature'], 'utf8');
+        let headers = req.headers['casino-signature'];
         let payload = req.body;
 
-        let verification = true || verify_signature(payload, headers, private_key);
+        let verification = true || verify_signature(payload, headers, public_key);
         if (verification) {
             try {
                 // let token = db['tokens'].find_one({'username': payload['user'], 'token': payload['token']}, {'expired': 1, '_id': 0})
@@ -152,7 +153,7 @@ exports.bet = [
         let date_time = new Date()
         let headers = req.headers['Casino-Signature']
         let payload = req.body;
-        let verification = true || verify_signature(payload, headers, private_key)
+        let verification = true || verify_signature(payload, headers, private_key);
 
         if (verification) {
             try {
@@ -163,8 +164,7 @@ exports.bet = [
                         'status': 'RS_ERROR_WRONG_CURRENCY',
                         'request_uuid': payload['request_uuid']
                     }
-
-                    return jsonify(response)
+                    res.json(response);
                 }
 
                 if (payload['amount'] < 0) {
@@ -174,160 +174,176 @@ exports.bet = [
                         'request_uuid': payload['request_uuid']
                     }
 
-                    return jsonify(response)
+                    res.json(response);
                 }
 
-                prev_response = db['transactions'].find_one({ 'request_uuid': payload['request_uuid'] })
+                // prev_response = db['transactions'].find_one({ 'request_uuid': payload['request_uuid'] });
 
-                if (prev_response = "is None") {
-                    prev_transaction = db['transactions'].find_one({ 'transaction_uuid': payload['transaction_uuid'] })
+                walletModel.getTransactionByReqUUID(payload).then((prev_response)=>{
 
-                    if (prev_transaction = "is not None") {
-
-                        if (payload['round'] == prev_transaction['round'] && payload['amount'] == (prev_transaction['amount'] * 100000)) {
-                            response = {
-                                'user': payload['user'],
-                                'status': 'RS_OK',
-                                'request_uuid': payload['request_uuid'],
-                                'balance': prev_transaction['balance'] * 100000
-                            }
-
-                            return jsonify(response)
-                        } else {
-                            response = {
-                                'user': payload['user'],
-                                'status': 'RS_ERROR_DUPLICATE_TRANSACTION',
-                                'request_uuid': payload['request_uuid']
-                            }
-
-                            return jsonify(response)
-                        }
-                    }
-                    token = db['tokens'].find_one({ 'username': payload['user'], 'token': payload['token'] }, { 'expired': 1, '_id': 0 })
-
-                    if (token = "is None") {
+                    if (prev_response.length){
+                        prev_response = prev_response[0];
                         response = {
                             'user': payload['user'],
-                            'status': 'RS_ERROR_INVALID_TOKEN',
-                            'request_uuid': payload['request_uuid']
-                        }
-
-                        return jsonify(response)
-                    }
-
-                    if (token['expired'] == 'Y') {
-                        response = {
-                            'user': payload['user'],
-                            'status': 'RS_ERROR_TOKEN_EXPIRED',
-                            'request_uuid': payload['request_uuid']
-                        }
-
-                        return jsonify(response)
-                    }
-
-                    required = {
-                        'user': 1,
-                        'user_status': 1,
-                        'bet_status': 1,
-                        'balance': 1,
-                        'casino_profit_loss': 1
-                    }
-
-                    user = db['users'].find_one({ 'username': payload['user'] }, required)
-
-                    if (user['user_status'] == 'N' || user['bet_status'] == 'N') {
-                        response = {
-                            'user': payload['user'],
-                            'status': 'RS_ERROR_USER_DISABLED',
-                            'request_uuid': payload['request_uuid']
-                        }
-
-                        return jsonify(response)
-                    }
-                    // #Add user exposure or endpoint
-
-                    available_balance = requests.post('http://endpoint/user_expo/', json = { 'user_id': str(user['_id']) }).json()['user_balance']
-
-                    if ((available_balance * 100000) >= payload['amount']) {
-                        balance = (available_balance * 100000) - payload['amount']
-                        profit_loss = user['casino_profit_loss'] - int(payload['amount'] / 100000)
-
-                        try {
-                            amount = int(payload['amount'] / 100000)
-
-                            payload['user_id'] = user['_id']
-                            payload['transaction_time'] = date_time
-                            payload['rolled_back'] = 'N'
-                            payload['transaction_type'] = 'debit'
-                            payload['amount'] = amount
-                            payload['balance'] = int(balance / 100000)
-
-                            _id = db['transactions'].insert_one(payload).inserted_id
-                            db['users'].update_one({ 'username': payload['user'] }, { '$set': { 'casino_profit_loss': profit_loss } })
-
-                            response = {
-                                'user': payload['user'],
-                                'status': 'RS_OK',
-                                'request_uuid': payload['request_uuid'],
-                                'balance': balance
-                            }
-
-                            return jsonify(response)
-                        } catch (err) {
-                            response = {
-                                'user': payload['user'],
-                                'status': 'RS_ERROR_UNKNOWN',
-                                'request_uuid': payload['request_uuid']
-                            }
-
-                            data = {
-                                'user': payload['user'],
-                                'token': payload['token'],
-                                'date_time': datetime.utcnow(),
-                                'error': str(traceback.format_exc())
-                            }
-
-                            db['casino_errors'].insert_one(data)
-
-                            return jsonify(response)
-                        }
-                    } else {
-                        response = {
-                            'user': payload['user'],
-                            'status': 'RS_ERROR_NOT_ENOUGH_MONEY',
+                            'status': 'RS_OK',
                             'request_uuid': payload['request_uuid'],
-                            'balance': available_balance * 100000
+                            'balance': prev_response['balance'] * 100000
                         }
+                        res.json(response);
+                    } else {
 
-                        return jsonify(response)
-                    }
-                } else {
-                    response = {
-                        'user': payload['user'],
-                        'status': 'RS_OK',
-                        'request_uuid': payload['request_uuid'],
-                        'balance': prev_response['balance'] * 100000
-                    }
+                        // prev_transaction = db['transactions'].find_one({ 'transaction_uuid': payload['transaction_uuid'] })
+                        
+                        walletModel.getTransactionByTransactionUUID(payload).then((prev_transaction)=>{
 
-                    return jsonify(response)
-                }
+                            if (prev_transaction.length) {
+
+                                prev_transaction = prev_transaction[0];
+    
+                                if (payload['round'] == prev_transaction['round'] && payload['amount'] == (prev_transaction['amount'] * 100000)) {
+                                    response = {
+                                        'user': payload['user'],
+                                        'status': 'RS_OK',
+                                        'request_uuid': payload['request_uuid'],
+                                        'balance': prev_transaction['balance'] * 100000
+                                    }
+                                    res.json(response)
+
+                                } else {
+                                    response = {
+                                        'user': payload['user'],
+                                        'status': 'RS_ERROR_DUPLICATE_TRANSACTION',
+                                        'request_uuid': payload['request_uuid']
+                                    }
+                                    res.json(response)
+                                }
+                            }
+
+                            // token = db['tokens'].find_one({ 'username': payload['user'], 'token': payload['token'] }, { 'expired': 1, '_id': 0 })
+
+                            walletModel.getTransactionByTransactionUUID(payload).then((token)=>{
+                            
+                                if (!token.length) {
+                                    response = {
+                                        'user': payload['user'],
+                                        'status': 'RS_ERROR_INVALID_TOKEN',
+                                        'request_uuid': payload['request_uuid']
+                                    }
+                                    res.json(response)
+                                }
+                                if (token[0].token['expired'] == 'Y') {
+                                    response = {
+                                        'user': payload['user'],
+                                        'status': 'RS_ERROR_TOKEN_EXPIRED',
+                                        'request_uuid': payload['request_uuid']
+                                    }
+                                    res.json(response)
+                                }
+            
+                                // required = {
+                                //     'user': 1,
+                                //     'user_status': 1,
+                                //     'bet_status': 1,
+                                //     'balance': 1,
+                                //     'casino_profit_loss': 1
+                                // }
+            
+                                // user = db['users'].find_one({ 'username': payload['user'] }, required)
+
+                                userModel.getUserByUsername(payload['user']).then((user)=>{
+                                    if(user.length){
+
+                                        user = user[0];
+                                        if (user['user_status'] == 'N' || user['bet_status'] == 'N') {
+                                            response = {
+                                                'user': payload['user'],
+                                                'status': 'RS_ERROR_USER_DISABLED',
+                                                'request_uuid': payload['request_uuid']
+                                            }
+                                            res.json(response)
+                                        }
+                    
+                                        available_balance = requests.post('http://endpoint/user_expo/', json = { 'user_id': str(user['_id']) }).json()['user_balance']
+                    
+                                        {
+                                            if ((available_balance * 100000) >= payload['amount']) {
+                                            balance = (available_balance * 100000) - payload['amount']
+                                            profit_loss = user['casino_profit_loss'] - int(payload['amount'] / 100000)
+                    
+                                            try {
+                                                amount = int(payload['amount'] / 100000)
+                    
+                                                payload['user_id'] = user['_id']
+                                                payload['transaction_time'] = date_time
+                                                payload['rolled_back'] = 'N'
+                                                payload['transaction_type'] = 'debit'
+                                                payload['amount'] = amount
+                                                payload['balance'] = int(balance / 100000)
+                    
+                                                _id = db['transactions'].insert_one(payload).inserted_id
+                                                db['users'].update_one({ 'username': payload['user'] }, { '$set': { 'casino_profit_loss': profit_loss } })
+                    
+                                                response = {
+                                                    'user': payload['user'],
+                                                    'status': 'RS_OK',
+                                                    'request_uuid': payload['request_uuid'],
+                                                    'balance': balance
+                                                }
+                    
+                                                res.json(response)
+                                            } catch (err) {
+                                                response = {
+                                                    'user': payload['user'],
+                                                    'status': 'RS_ERROR_UNKNOWN',
+                                                    'request_uuid': payload['request_uuid']
+                                                }
+                    
+                                                data = {
+                                                    'user': payload['user'],
+                                                    'token': payload['token'],
+                                                    'date_time': datetime.utcnow(),
+                                                    'error': str(traceback.format_exc())
+                                                }
+                    
+                                                db['casino_errors'].insert_one(data)
+                    
+                                                res.json(response)
+                                            }
+                                        } else {
+                                            response = {
+                                                'user': payload['user'],
+                                                'status': 'RS_ERROR_NOT_ENOUGH_MONEY',
+                                                'request_uuid': payload['request_uuid'],
+                                                'balance': available_balance * 100000
+                                            }
+                    
+                                            res.json(response)
+                                        }
+                                    }
+                                    }else{
+                                        //some handling ******************************************************************
+                                    }
+                                })
+                            });
+                        });
+                    }
+                });
             } catch (err) {
                 response = {
                     'user': payload['user'],
                     'status': 'RS_ERROR_UNKNOWN',
                     'request_uuid': payload['request_uuid']
                 }
-
                 data = {
                     'user': payload['user'],
                     'token': payload['token'],
-                    'date_time': datetime.utcnow(),
-                    'error': str(traceback.format_exc())
+                    'date_time': new Date(),
+                    'error': err.stack
                 }
 
                 db['casino_errors'].insert_one(data)
 
-                return jsonify(response)
+                res.json(response)
             }
         } else {
             let response = {

@@ -17,18 +17,18 @@ fs.readFile(public_keyPath, 'utf8', (err, data) => {
     public_key = data;
 })
 
-function signToken(token){
-  const encryptedData = crypto.publicEncrypt(
-    {
-      key: public_key,
-      padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
-      oaepHash: "sha256",
-    },
-    Buffer.from(token)
-    // token
-  )
-  return encryptedData.toString();
-}
+// function signToken(token){
+//   const encryptedData = crypto.publicEncrypt(
+//     {
+//       key: public_key,
+//       padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
+//       oaepHash: "sha256",
+//     },
+//     Buffer.from(token)
+//     // token
+//   )
+//   return encryptedData.toString();
+// }
 const getAuth =  (req, res, next) => {
     const credentials = req.body.user_id && req.body.password;
     if(credentials) {
@@ -48,7 +48,7 @@ const getAuth =  (req, res, next) => {
           const secret = process.env.JWT_SECRET;
           //Generated JWT token with Payload and secret.
           let token = jwt.sign(jwtPayload, secret, jwtData);
-          let signedToken = signToken(JSON.stringify(jwtPayload));
+          // let signedToken = signToken(JSON.stringify(jwtPayload));
           walletModel.updateUserToken(user.id, token).then((data)=>{
             logger.info("User token update: ");
             logger.info(data);
@@ -59,7 +59,6 @@ const getAuth =  (req, res, next) => {
           res.json({"code":200,
             "status":"LOGGED_IN",
             "token": token,
-            "signedToken": signedToken,
          });
         }else{
           res.json({"code":404,

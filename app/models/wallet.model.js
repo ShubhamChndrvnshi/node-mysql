@@ -9,6 +9,53 @@ const walletModel = {
    getWalletByUser: getWalletByUser,
    getWalletByUserToken: getWalletByUserToken,
    getUserExposure: getUserExposure,
+   getTransactionByReqUUID: getTransactionByReqUUID,
+   getTransactionByTransactionUUID: getTransactionByTransactionUUID,
+   getTokenByUserToken: getTokenByUserToken,
+}
+
+function getTokenByUserToken(payload) {
+    return new Promise((resolve,reject) => {
+        db.query("SELECT * FROM Tokens WHERE username ='"+payload['user']+"' AND token = '"+payload['token']+"'",(error,rows,fields)=>{
+            if(!!error) {
+                dbFunc.connectionRelease;
+                reject(error);
+            } else {
+                dbFunc.connectionRelease;
+                resolve(rows);
+            }
+       });
+    });  
+}
+
+function getTransactionByTransactionUUID(payload) {
+    return new Promise((resolve,reject) => {
+        db.query("SELECT * FROM transactions WHERE transaction_uuid = '"+payload['transaction_uuid']+"'",(error,rows,fields)=>{
+            if(!!error) {
+                dbFunc.connectionRelease;
+                reject(error);
+            } else {
+                // console.log(fields)
+                dbFunc.connectionRelease;
+                resolve(rows);
+            }
+       });
+    });  
+}
+
+function getTransactionByReqUUID(payload) {
+    return new Promise((resolve,reject) => {
+        db.query("SELECT * FROM transactions WHERE request_uuid = '"+payload['request_uuid']+"'",(error,rows,fields)=>{
+            if(!!error) {
+                dbFunc.connectionRelease;
+                reject(error);
+            } else {
+                // console.log(fields)
+                dbFunc.connectionRelease;
+                resolve(rows);
+            }
+       });
+    });  
 }
 
 function getWalletByUserByPassword(payload) {
