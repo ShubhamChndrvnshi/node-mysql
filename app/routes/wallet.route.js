@@ -5,8 +5,7 @@ const router = express.Router();
 
 router.post("/balance", walletService.balance);
 
-//Logged user remove own properties wishlisted
-// router.post("/remove/property",);
+router.post("/bet",walletService.bet);
 
 // //Logged user can get it's wishlisted properties
 // router.post("/get",);
