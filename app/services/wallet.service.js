@@ -45,6 +45,21 @@ exports.balance = [
     (req, res) => {
         let headers = req.headers['casino-signature']
         let payload = req.body;
+        // const decryptedData = crypto.privateDecrypt(
+        //     {
+        //         key: key,
+        //         // In order to decrypt the data, we need to specify the
+        //         // same hashing function and padding scheme that we used to
+        //         // encrypt the data in the previous step
+        //         padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
+        //         oaepHash: "sha256",
+        //     },
+        //     headers
+        // );
+        // console.log("headers",headers);
+
+        // console.log("decryptedData",decryptedData);
+
         let verification = true || verify_signature(payload, headers, public_key);
         if (verification) {
             try {
@@ -186,6 +201,17 @@ exports.getUserById = (id) => {
 
 function verify_signature(data, signature, key) {
     try {
+        const decryptedData = crypto.privateDecrypt(
+            {
+                key: key,
+                // In order to decrypt the data, we need to specify the
+                // same hashing function and padding scheme that we used to
+                // encrypt the data in the previous step
+                padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
+                oaepHash: "sha256",
+            },
+            encryptedData
+        )
         let signer = new NodeRSA(key, "pkcs1");
         let digest = new NodeRSA(data, "sha256");
         console.log("signer", signer);
