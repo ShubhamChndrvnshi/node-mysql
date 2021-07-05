@@ -9,6 +9,7 @@ router.post("/bet",walletService.debit);
 
 router.post("/win",walletService.credit);
 
+router.post("/rollback",walletService.rollback);
 
 module.exports = router;
 

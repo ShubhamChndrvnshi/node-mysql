@@ -30,15 +30,16 @@ const NodeRSA = require('node-rsa');
 //   console.log(encrpted);
 // }
 const getAuth =  (req, res, next) => {
-    const credentials = req.body.user_id && req.body.password;
+    const credentials = req.body.user_id && req.body.token;
     if(credentials) {
-      walletModel.getWalletByUserByPassword(req.body).then((data)=>{
+      walletModel.getWalletByUserByToken(req.body).then((data)=>{
         logger.info("user login :");
         if(data.length){
           let user = data[0];
           logger.info(user);
           const jwtPayload = {
             id: user.id,
+            _id: user.id,
             user_id: user.id,
           };
           // console.log("jwtPayload", jwtPayload);
@@ -49,7 +50,7 @@ const getAuth =  (req, res, next) => {
           //Generated JWT token with Payload and secret.
           let token = jwt.sign(jwtPayload, secret, jwtData);
           // signToken({user_id: user.id, token: token});
-          walletModel.updateUserToken(user.id, token).then((data)=>{
+          walletModel.updateUserToken(req.body.user_id, token).then((data)=>{
             logger.info("User token update: ");
             logger.info(data);
           },(err) => {

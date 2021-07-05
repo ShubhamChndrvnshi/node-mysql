@@ -38,6 +38,30 @@ function insertError(payload) {
         });
 }
 
+function insertErrorObject(payload){
+    let fields = "";
+    let values = "";
+    Object.entries(payload).forEach(
+        ([key, value]) => {
+            fields = fields + key+ ","
+            values = values + value+ ","
+        }
+    );
+    fields = fields.slice(0, -1);
+    values = values.slice(0, -1);
+    return new Promise((resolve,reject) => {
+        db.query(`INSERT IGNORE INTO casino_errors (${fields}) VALUES (${values})`,(error,rows,fields)=>{
+            if(!!error) {
+                dbFunc.connectionRelease;
+                reject(error);
+            } else {
+                dbFunc.connectionRelease;
+                resolve(rows);
+            }
+       });    
+    })
+}
+
 
 function updateUserToken(id,token) {
     return new Promise((resolve,reject) => {

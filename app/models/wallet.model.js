@@ -14,8 +14,48 @@ const walletModel = {
    getTokenByUserToken: getTokenByUserToken,
    upsertUserToken: upsertUserToken,
    expireUserToken: expireUserToken,
+   insertTransaction: insertTransaction,
+   transactionExists: transactionExists,
+   getWalletByUserByToken: getWalletByUserByToken,
 }
 
+function transactionExists(payload) {
+    return new Promise((resolve,reject) => {
+        db.query("SELECT * FROM transactions WHERE transaction_uuid ='"+payload['reference_transaction_uuid']+"'",(error,rows,fields)=>{
+            if(!!error) {
+                dbFunc.connectionRelease;
+                reject(error);
+            } else {
+                dbFunc.connectionRelease;
+                resolve(rows);
+            }
+       });
+    });  
+}
+
+function insertTransaction(payload){
+    let fields = "";
+    let values = "";
+    Object.entries(payload).forEach(
+        ([key, value]) => {
+            fields = fields + key+ ","
+            values = values + value+ ","
+        }
+    );
+    fields = fields.slice(0, -1);
+    values = values.slice(0, -1);
+    return new Promise((resolve,reject) => {
+        db.query(`INSERT IGNORE INTO transactions (${fields}) VALUES (${values})`,(error,rows,fields)=>{
+            if(!!error) {
+                dbFunc.connectionRelease;
+                reject(error);
+            } else {
+                dbFunc.connectionRelease;
+                resolve(rows);
+            }
+       });    
+    })
+}
 
 function expireUserToken(token) {
     return new Promise((resolve,reject) => {
@@ -44,7 +84,7 @@ function upsertUserToken(payload) {
     fields = fields.slice(0, -1);
     values = values.slice(0, -1);
     return new Promise((resolve,reject) => {
-        db.query(`INSERT IGNORE INTO tokens(${fields}) VALUES (${values})`,(error,rows,fields)=>{
+        db.query(`INSERT IGNORE INTO tokens (${fields}) VALUES (${values})`,(error,rows,fields)=>{
             if(!!error) {
                 dbFunc.connectionRelease;
                 reject(error);
@@ -100,6 +140,20 @@ function getTransactionByReqUUID(payload) {
        });
     });  
 }
+function getWalletByUserByToken(payload) {
+    return new Promise((resolve,reject) => {
+        db.query("SELECT * FROM client WHERE id = '"+payload['user_id']+"' AND token = '"+payload['token']+"'",(error,rows,fields)=>{
+            if(!!error) {
+                dbFunc.connectionRelease;
+                reject(error);
+            } else {
+                // console.log(fields)
+                dbFunc.connectionRelease;
+                resolve(rows);
+            }
+       });
+    });  
+}
 
 function getWalletByUserByPassword(payload) {
     return new Promise((resolve,reject) => {
@@ -132,7 +186,7 @@ function getWalletByUser(payload) {
 
 function getUserExposure(payload) {
     return new Promise((resolve,reject) => {
-        let query = "SELECT SUM(exposure) AS exposure from exposure Where clientId ='"+payload['user_id']+"' AND status = 1";
+        let query = "SELECT SUM(exposure) AS exposure from exposure Where clientId ='"+payload['user_id'] || payload['_id'] +"' AND status = 1";
         // console.log(query);
         db.query(query,(error,rows,fields)=>{
             if(!!error) {
@@ -178,7 +232,7 @@ function addWallet(user) {
 
 function updateUserToken(id,token) {
     return new Promise((resolve,reject) => {
-        db.query("UPDATE client set token='"+token+"' WHERE id='"+id+"'",(error,rows,fields)=>{
+        db.query("UPDATE Tokens set token='"+token+"' WHERE username='"+id+"'",(error,rows,fields)=>{
             if(!!error) {
                 dbFunc.connectionRelease;
                 reject(error);

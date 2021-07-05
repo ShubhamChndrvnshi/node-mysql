@@ -6,7 +6,21 @@ var userModel = {
    addUser:addUser,
    updateUser:updateUser,
    deleteUser:deleteUser,
-   getUserByUsername:getUserByUsername
+   getUserByUsername:getUserByUsername,
+   updateUserCasinoProfit: updateUserCasinoProfit,
+}
+function updateUserCasinoProfit(username, casino_profit_loss){
+    return new Promise((resolve,reject) => {
+        db.query("UPDATE users set casino_profit_loss = '"+casino_profit_loss+"' WHERE username = '"+username+"'",(error,rows,fields)=>{
+            if(!!error) {
+                dbFunc.connectionRelease;
+                reject(error);
+            } else {
+                dbFunc.connectionRelease;
+                resolve(rows);
+            }
+       });    
+    })
 }
 
 function getAllUser() {
