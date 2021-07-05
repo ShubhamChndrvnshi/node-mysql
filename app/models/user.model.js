@@ -8,10 +8,27 @@ var userModel = {
    deleteUser:deleteUser,
    getUserByUsername:getUserByUsername,
    updateUserCasinoProfit: updateUserCasinoProfit,
+   updateUserProfit: updateUserProfit,
 }
-function updateUserCasinoProfit(username, casino_profit_loss){
+function updateUserCasinoProfit(payload){
     return new Promise((resolve,reject) => {
-        db.query("UPDATE users set casino_profit_loss = '"+casino_profit_loss+"' WHERE username = '"+username+"'",(error,rows,fields)=>{
+        
+        db.query("UPDATE client set curr_limit = curr_limit -"+payload.amount+" where id='"+payload.user_id+"'",(error,rows,fields)=>{
+            if(!!error) {
+                dbFunc.connectionRelease;
+                reject(error);
+            } else {
+                dbFunc.connectionRelease;
+                resolve(rows);
+            }
+       });    
+    })
+}
+
+function updateUserProfit(payload){
+    return new Promise((resolve,reject) => {
+        
+        db.query("UPDATE client set curr_limit = curr_limit + "+payload.amount+" where id='"+payload.user_id+"'",(error,rows,fields)=>{
             if(!!error) {
                 dbFunc.connectionRelease;
                 reject(error);

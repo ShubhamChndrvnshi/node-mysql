@@ -5,7 +5,7 @@ const walletModel = {
    getWalletByUserByPassword:getWalletByUserByPassword,
    addWallet:addWallet,
    updateUserToken:updateUserToken,
-   deleteWallet:deleteWallet,
+   subtractBalanceWithCurrent:subtractBalanceWithCurrent,
    getWalletByUser: getWalletByUser,
    getWalletByUserToken: getWalletByUserToken,
    getUserExposure: getUserExposure,
@@ -17,6 +17,39 @@ const walletModel = {
    insertTransaction: insertTransaction,
    transactionExists: transactionExists,
    getWalletByUserByToken: getWalletByUserByToken,
+   getWalletByUserByPass: getWalletByUserByPass,
+   getUserCurrLimit: getUserCurrLimit,
+   getCreditTransactionByTransactionUUID: getCreditTransactionByTransactionUUID,
+   insertTransactionFieldValues: insertTransactionFieldValues,
+   insertTransactionCbet: insertTransactionCbet,
+}
+
+function insertTransactionFieldValues(fields, values) {
+    return new Promise((resolve,reject) => {
+        db.query(`INSERT IGNORE INTO transactions ${fields} VALUES ${values}`,(error,rows,fields)=>{
+            if(!!error) {
+                dbFunc.connectionRelease;
+                reject(error);
+            } else {
+                dbFunc.connectionRelease;
+                resolve(rows);
+            }
+       });
+    });  
+}
+
+function insertTransactionCbet(fields, values) {
+    return new Promise((resolve,reject) => {
+        db.query(`INSERT IGNORE INTO cbet ${fields} VALUES ${values}`,(error,rows,fields)=>{
+            if(!!error) {
+                dbFunc.connectionRelease;
+                reject(error);
+            } else {
+                dbFunc.connectionRelease;
+                resolve(rows);
+            }
+       });
+    });  
 }
 
 function transactionExists(payload) {
@@ -126,6 +159,21 @@ function getTransactionByTransactionUUID(payload) {
     });  
 }
 
+function getCreditTransactionByTransactionUUID(payload) {
+    return new Promise((resolve,reject) => {
+        db.query("SELECT * FROM transactions WHERE transaction_uuid = '"+payload['transaction_uuid']+"' AND transaction_type = 'credit'",(error,rows,fields)=>{
+            if(!!error) {
+                dbFunc.connectionRelease;
+                reject(error);
+            } else {
+                // console.log(fields)
+                dbFunc.connectionRelease;
+                resolve(rows);
+            }
+       });
+    });  
+}
+
 function getTransactionByReqUUID(payload) {
     return new Promise((resolve,reject) => {
         db.query("SELECT * FROM transactions WHERE request_uuid = '"+payload['request_uuid']+"'",(error,rows,fields)=>{
@@ -154,6 +202,22 @@ function getWalletByUserByToken(payload) {
        });
     });  
 }
+
+function getWalletByUserByPass(payload) {
+    return new Promise((resolve,reject) => {
+        db.query("SELECT * FROM client WHERE id = '"+payload['user_id']+"' AND token = '"+payload['password']+"'",(error,rows,fields)=>{
+            if(!!error) {
+                dbFunc.connectionRelease;
+                reject(error);
+            } else {
+                // console.log(fields)
+                dbFunc.connectionRelease;
+                resolve(rows);
+            }
+       });
+    });  
+}
+
 
 function getWalletByUserByPassword(payload) {
     return new Promise((resolve,reject) => {
@@ -186,7 +250,27 @@ function getWalletByUser(payload) {
 
 function getUserExposure(payload) {
     return new Promise((resolve,reject) => {
-        let query = "SELECT SUM(exposure) AS exposure from exposure Where clientId ='"+payload['user_id'] || payload['_id'] +"' AND status = 1";
+        let id = payload['user_id'] || payload['_id']
+        let query = "SELECT IFNULL(SUM(exposure),0) AS exposure from exposure Where clientId ='"+id +"' AND status = 1";
+        // console.log(query);
+        db.query(query,(error,rows,fields)=>{
+            if(!!error) {
+                // console.log(error);
+                dbFunc.connectionRelease;
+                reject(error);
+            } else {
+                dbFunc.connectionRelease;
+                resolve(rows);
+            }
+       });
+    });  
+}
+
+
+function getUserCurrLimit(payload) {
+    return new Promise((resolve,reject) => {
+        let id = payload['user_id'] || payload['_id']
+        let query = "Select IFNULL(curr_limit,0) from client where id= '"+id+"'";
         // console.log(query);
         db.query(query,(error,rows,fields)=>{
             if(!!error) {
@@ -244,9 +328,9 @@ function updateUserToken(id,token) {
     })
 }
 
-function deleteWallet(id) {
+function subtractBalanceWithCurrent(amount, id) {
    return new Promise((resolve,reject) => {
-        db.query("DELETE FROM client WHERE id='"+id+"'",(error,rows,fields)=>{
+        db.query("UPDATE client set curr_limit = curr_limit - "+amount+" where id='"+id+"'",(error,rows,fields)=>{
             if(!!error) {
                 dbFunc.connectionRelease;
                 reject(error);

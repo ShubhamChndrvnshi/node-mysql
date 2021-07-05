@@ -30,9 +30,10 @@ const NodeRSA = require('node-rsa');
 //   console.log(encrpted);
 // }
 const getAuth =  (req, res, next) => {
-    const credentials = req.body.user_id && req.body.token;
+    const credentials = req.body.user_id && req.body.password;
+    console.log(req.headers);
     if(credentials) {
-      walletModel.getWalletByUserByToken(req.body).then((data)=>{
+      walletModel.getWalletByUserByPass(req.body).then((data)=>{
         logger.info("user login :");
         if(data.length){
           let user = data[0];
@@ -63,18 +64,18 @@ const getAuth =  (req, res, next) => {
          });
         }else{
           res.json({"code":404,
-            "status":"KO",
+            "status":"INVALID USER",
          });
         }
       },(err) => {
         logger.error("user data fetch error");
         logger.error(err);
       })
-    }else if(req.headers['casino-signature']){
+    }else if(req.headers["casino-signature"]){
       next();
     }else{
       res.json({"code":404,
-            "status":"KO",
+            "status":"Casino-Signature NOT FOUND",
          });
     }
   }

@@ -7,8 +7,8 @@ router.get("/save_token",thirdPartyService.save);
 
 router.get("/expire_token",thirdPartyService.expire);
 
-router.get("/game/list",thirdPartyService.gameList);
+router.post("/game/list",thirdPartyService.gameList);
 
-router.get("/game/url",thirdPartyService.gameUrl);
+router.post("/game/url",thirdPartyService.gameUrl);
 
 module.exports = router;

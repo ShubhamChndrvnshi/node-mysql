@@ -140,7 +140,7 @@ exports.expire = [
 
 
 function sign_data(data) {
-  sign = crypto.createSign('SHA256');
+  let sign = crypto.createSign('SHA256');
   sign.write(data);
   sign.end();
   const key = fs.readFileSync(private_keyPath);

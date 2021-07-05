@@ -6,6 +6,7 @@ const errorModel = {
    updateUserToken:updateUserToken,
    deleteWallet:deleteWallet,
    getWalletByUserToken: getWalletByUserToken,
+   insertErrorObject: insertErrorObject,
 }
 
 
