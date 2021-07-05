@@ -684,7 +684,11 @@ exports.rollback = [
                             let tran_values = ` ( ${payload.balance}, ${payload.request_uuid}, ${payload.transaction_uuid}, ${payload.user_id}, Y, ${payload.transaction_type}, ${payload.supplier_user}, ${payload.supplier_transaction_id} )`;
                             await walletModel.insertTransactionFieldValues(tran_fields, tran_values);
 
-                            await walletModel.subtractBalanceWithCurrent(prev_transaction['amount']);
+                            await walletModel.subtractBalanceWithCurrent(prev_transaction['amount']).then((data)=>{
+                                console.log(data);
+                            },(err)=>{
+                                console.log(err);
+                            });
 
                             let response = {
                                 'user': payload['user_id'],
@@ -692,6 +696,12 @@ exports.rollback = [
                                 'request_uuid': payload['request_uuid'],
                             }
                             res.json(response);
+                        }else{
+                            res.json({
+                                'user': payload['user_id'],
+                                'status': 'PREV_TRANSACTION_NOT_FOUND',
+                                'request_uuid': payload['request_uuid'],
+                            });
                         }
                     })
                 }
