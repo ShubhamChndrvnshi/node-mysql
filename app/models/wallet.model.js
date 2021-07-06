@@ -22,6 +22,7 @@ const walletModel = {
    getCreditTransactionByTransactionUUID: getCreditTransactionByTransactionUUID,
    insertTransactionFieldValues: insertTransactionFieldValues,
    insertTransactionCbet: insertTransactionCbet,
+   getToken: getToken,
 }
 
 function insertTransactionFieldValues(fields, values) {
@@ -133,6 +134,20 @@ function upsertUserToken(payload) {
 function getTokenByUserToken(payload) {
     return new Promise((resolve,reject) => {
         db.query("SELECT * FROM Tokens WHERE username ='"+payload['user']+"' AND token = '"+payload['token']+"'",(error,rows,fields)=>{
+            if(!!error) {
+                dbFunc.connectionRelease;
+                reject(error);
+            } else {
+                dbFunc.connectionRelease;
+                resolve(rows);
+            }
+       });
+    });  
+}
+
+function getToken(token) {
+    return new Promise((resolve,reject) => {
+        db.query("SELECT * FROM Tokens WHERE token = '"+token+"'",(error,rows,fields)=>{
             if(!!error) {
                 dbFunc.connectionRelease;
                 reject(error);

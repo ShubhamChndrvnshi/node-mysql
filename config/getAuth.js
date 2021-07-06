@@ -72,6 +72,50 @@ const getAuth =  (req, res, next) => {
         logger.error(err);
       })
     }else if(req.headers["casino-signature"]){
+      if(req.body.token){
+        walletModel.getToken(req.body.token).then((data)=>{
+          if(data.length){
+            data = data[0];
+            if(data.expired){
+              let response = {
+                'user': payload['user_id'],
+                'status': 'RS_ERROR_TOKEN_EXPIRED',
+                'request_uuid': payload['request_uuid']
+            }
+            res.json(response);
+            }
+          }else{
+            let response = {
+              'user': payload['user_id'],
+              'status': 'RS_ERROR_INVALID_TOKEN',
+              'request_uuid': payload['request_uuid']
+          }
+          res.json(response);
+          }
+          jwt.verify(req.body.token, process.env.JWT_SECRET, (err, decoded) => {
+            if (err) {
+                // console.log(err);
+                if (err.message == "jwt expired") {
+                    let response = {
+                        'user': payload['user_id'],
+                        'status': 'RS_ERROR_TOKEN_EXPIRED',
+                        'request_uuid': payload['request_uuid']
+                    }
+                    res.json(response);
+                } else {
+                    let response = {
+                        'user': payload['user_id'],
+                        'status': 'RS_ERROR_INVALID_TOKEN',
+                        'request_uuid': payload['request_uuid']
+                    }
+                    res.json(response);
+                }
+            } else {
+              req["decoded"] = decoded;
+            }
+          });
+        })
+      }
       next();
     }else{
       res.json({"code":404,
