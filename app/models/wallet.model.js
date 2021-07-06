@@ -186,7 +186,7 @@ function getTransactionByTransactionUUID(payload) {
 /******************************** */
 function getTransactionByTransactionUUIDRollback(payload) {
     return new Promise((resolve, reject) => {
-        db.query("SELECT * FROM transactions WHERE transaction_uuid = '" + payload['transaction_uuid'] + "' AND bet_status <> 'U'", (error, rows, fields) => {
+        db.query("SELECT * FROM transactions WHERE transaction_uuid = '" + payload['transaction_uuid'] + "' AND bet_status IS NULL", (error, rows, fields) => {
             if (!!error) {
                 dbFunc.connectionRelease;
                 reject(error);

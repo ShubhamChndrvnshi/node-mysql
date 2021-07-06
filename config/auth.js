@@ -107,9 +107,11 @@ const auth = (req, res, next) => {
                             res.json(response);
                         }
                     } else {
+                        console.log(decoded);
                         walletModel.getTokenByUserToken(payload).then((data)=>{
                           if(data.length){
                             req["decoded"] = decoded;
+                            next();
                           }else{
                             res.json({
                               'user': payload['user_id'],
@@ -122,7 +124,6 @@ const auth = (req, res, next) => {
                 });
             })
         }
-        next();
     }
 }
 

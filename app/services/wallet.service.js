@@ -72,15 +72,14 @@ exports.balance = [
                                         if (userExposure.length) {
                                             let curr_limit = user[0].curr_limit;
                                             let available_balance = curr_limit - userExposure[0].exposure;
-                                                console.log(transaction);
-                                                let resp = {
-                                                    'user': payload['user_id'],
-                                                    'status': 'RS_OK',
-                                                    'request_uuid': payload['request_uuid'],
-                                                    'balance': available_balance * 100000,
-                                                    'currency': "HKD"
-                                                }
-                                                res.json(resp);
+                                            let resp = {
+                                                'user': payload['user_id'],
+                                                'status': 'RS_OK',
+                                                'request_uuid': payload['request_uuid'],
+                                                'balance': available_balance * 100000,
+                                                'currency': "HKD"
+                                            }
+                                            res.json(resp);
                                         } else {
                                             res.json({ exposure: 0 });
                                         }
@@ -476,10 +475,10 @@ exports.credit = [
                                 res.json(response)
                             } else {
                                 getBalance(decoded, payload).then(async (responsed) => {
-                                    await userModel.updateUserProfit(payload);
+                                    await userModel.updateUserProfit(payload).then((data) => { console.log(data); }, (err) => { console.log(err); });
 
-                                    let tran_fields = " (balance, request_uuid, transaction_uuid, user_id, rolled_back, transaction_type, supplier_user, supplier_transaction_id )";
-                                    let tran_values = ` ( ${responsed.balance}, '${payload.request_uuid}', '${payload.transaction_uuid}', '${payload.user_id}', 'N', 'credit', '${payload.supplier_user}', '${payload.supplier_transaction_id}' )`;
+                                    let tran_fields = " (amount, balance, request_uuid, transaction_uuid, user_id, rolled_back, transaction_type, supplier_user, supplier_transaction_id )";
+                                    let tran_values = ` ( ${payload.amount}, ${responsed.balance}, '${payload.request_uuid}', '${payload.transaction_uuid}', '${payload.user_id}', 'N', 'credit', '${payload.supplier_user}', '${payload.supplier_transaction_id}' )`;
                                     await walletModel.insertTransactionFieldValues(tran_fields, tran_values);
                                     responsed.currency = payload['currency'];
 
@@ -666,16 +665,17 @@ exports.rollback = [
                 } else {
                     getBalance(decoded, payload).then(async (responsed) => {
 
-                        let tran_fields = " (balance, request_uuid, transaction_uuid, user_id, rolled_back, transaction_type, supplier_user, supplier_transaction_id )";
-                        let tran_values = ` ( ${responsed.balance}, '${payload.request_uuid}', '${payload.transaction_uuid}', '${payload.user_id}', 'Y', 'rollback', '${payload.supplier_user}', '${payload.supplier_transaction_id}' )`;
+                        let tran_fields = " (balance, request_uuid, transaction_uuid, user_id, rolled_back, transaction_type )";
+                        let tran_values = ` ( ${responsed.balance}, '${payload.request_uuid}', '${payload.transaction_uuid}', '${payload.user_id}', 'Y', 'rollback')`;
                         console.log("values", tran_values);
-                        await walletModel.insertTransactionFieldValues(tran_fields, tran_values);
 
                         walletModel.getTransactionByTransactionUUIDRollback(payload).then(async (prev_transaction) => {
+                            await walletModel.insertTransactionFieldValues(tran_fields, tran_values);
                             if (prev_transaction.length) {
+                                console.log("Prevkjkjkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk", prev_transaction);
                                 prev_transaction = prev_transaction[0];
                                 await walletModel.updateTransactionStatusByTransactionUUID(payload);
-                                await walletModel.subtractBalanceWithCurrent(prev_transaction['amount']).then((data) => {
+                                await walletModel.subtractBalanceWithCurrent(prev_transaction['amount'],payload['user_id']).then((data) => {
                                     console.log(data);
                                 }, (err) => {
                                     console.log(err);
@@ -690,9 +690,9 @@ exports.rollback = [
 
                                 res.json(response);
                             }
+                            responsed.currency = payload['currency'];
+                            res.json(responsed);
                         });
-                        responsed.currency = payload['currency'];
-                        res.json(responsed);
                     });
                 }
             });
