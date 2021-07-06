@@ -72,17 +72,15 @@ exports.balance = [
                                         if (userExposure.length) {
                                             let curr_limit = user[0].curr_limit;
                                             let available_balance = curr_limit - userExposure[0].exposure;
-                                            walletModel.transactionExists(payload["request_uuid"]).then((transaction)=>{
                                                 console.log(transaction);
                                                 let resp = {
                                                     'user': payload['user_id'],
                                                     'status': 'RS_OK',
                                                     'request_uuid': payload['request_uuid'],
                                                     'balance': available_balance * 100000,
-                                                    'currency': transaction[0]?.currency || payload.currency || "NOT_FOUND"
+                                                    'currency': "HKD"
                                                 }
                                                 res.json(resp);
-                                            });
                                         } else {
                                             res.json({ exposure: 0 });
                                         }

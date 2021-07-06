@@ -108,7 +108,7 @@ const auth = (req, res, next) => {
                         }
                     } else {
                         walletModel.getTokenByUserToken(payload).then((data)=>{
-                          if(data,length){
+                          if(data.length){
                             req["decoded"] = decoded;
                           }else{
                             res.json({
