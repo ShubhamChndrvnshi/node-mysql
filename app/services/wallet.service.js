@@ -234,9 +234,10 @@ exports.debit = [
                             }
 
                             let tran_fields = " (balance, request_uuid, transaction_uuid, user_id, rolled_back, transaction_type, supplier_user, supplier_transaction_id )";
-                            let tran_values = ` ( ${payload.amount}, ${payload.request_uuid}, ${payload.transaction_uuid}, ${payload.user_id}, Y, ${payload.transaction_type}, ${payload.supplier_user}, ${payload.supplier_transaction_id} )`;
+                            let tran_fields1 = " (amount, request_uuid, transaction_uuid, user_id, rolled_back, transaction_type, supplier_user, supplier_transaction_id )";
+                            let tran_values = ` ( ${payload.amount}, '${payload.request_uuid}', '${payload.transaction_uuid}', '${payload.user_id}', 'Y', '${payload.transaction_type}', '${payload.supplier_user}', '${payload.supplier_transaction_id}' )`;
                             await walletModel.insertTransactionFieldValues(tran_fields, tran_values);
-                            await walletModel.insertTransactionCbet(tran_fields, tran_values);
+                            await walletModel.insertTransactionCbet(tran_fields1, tran_values);
 
 
                             res.json(response);
@@ -473,7 +474,7 @@ exports.credit = [
                             await userModel.updateUserProfit(payload);
 
                             let tran_fields = " (balance, request_uuid, transaction_uuid, user_id, rolled_back, transaction_type, supplier_user, supplier_transaction_id )";
-                            let tran_values = ` ( ${payload.amount}, ${payload.request_uuid}, ${payload.transaction_uuid}, ${payload.user_id}, Y, ${payload.transaction_type}, ${payload.supplier_user}, ${payload.supplier_transaction_id} )`;
+                            let tran_values = ` ( ${payload.amount}, '${payload.request_uuid}', '${payload.transaction_uuid}', '${payload.user_id}', 'Y', '${payload.transaction_type}', '${payload.supplier_user}', '${payload.supplier_transaction_id}' )`;
                             await walletModel.insertTransactionFieldValues(tran_fields, tran_values);
 
                             let response = {
@@ -681,7 +682,7 @@ exports.rollback = [
                                 res.json(response)
                             }
                             let tran_fields = " (balance, request_uuid, transaction_uuid, user_id, rolled_back, transaction_type, supplier_user, supplier_transaction_id )";
-                            let tran_values = ` ( ${payload.balance}, ${payload.request_uuid}, ${payload.transaction_uuid}, ${payload.user_id}, Y, ${payload.transaction_type}, ${payload.supplier_user}, ${payload.supplier_transaction_id} )`;
+                            let tran_values = ` ( ${payload.balance}, '${payload.request_uuid}', '${payload.transaction_uuid}', '${payload.user_id}', 'Y', '${payload.transaction_type}', '${payload.supplier_user}', '${payload.supplier_transaction_id}' )`;
                             await walletModel.insertTransactionFieldValues(tran_fields, tran_values);
 
                             await walletModel.subtractBalanceWithCurrent(prev_transaction['amount']).then((data)=>{
