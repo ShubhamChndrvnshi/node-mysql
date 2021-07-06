@@ -183,7 +183,73 @@ exports.debit = [
                     }
                 });
 
+                walletModel.getTransactionByReqUUID(payload).then((prev_req) => {
+                    if (prev_req.length) {
+                        let response = {
+                            'user': payload['user'],
+                            'status': 'RS_ERROR_DUPLICATE_REQUEST',
+                            'request_uuid': payload['request_uuid']
+                        }
 
+                        res.json(response)
+                    } else {
+                        walletModel.getTransactionByTransactionUUID(payload).then((prev_tran) => {
+                            if (prev_tran.length) {
+                                let response = {
+                                    'user': payload['user'],
+                                    'status': 'RS_ERROR_DUPLICATE_TRANSACTION',
+                                    'request_uuid': payload['request_uuid']
+                                }
+
+                                res.json(response)
+                            } else {
+                                getBalance(jwt_decoded, payload).then(async (response) => {
+
+                                    console.log("jhhhsvjvsdjvsjv", response)
+
+                                    await userModel.updateUserCasinoProfit(payload);
+
+                                    let tran_fields = " (balance, request_uuid, transaction_uuid, user_id, rolled_back, transaction_type, supplier_user, supplier_transaction_id )";
+                                    let tran_values = ` ( ${payload.amount}, '${payload.user_id}', '${payload.transaction_uuid}', '${payload.user_id}', 'N', 'debit', '${payload.supplier_user}', '${payload.supplier_transaction_id}' )`;
+                                    await walletModel.insertTransactionFieldValues(tran_fields, tran_values).then((data) => {
+                                        console.log(data);
+                                    }, (err) => {
+                                        if (err.message.includes("Duplicate entry")) {
+                                            let response = {
+                                                'user': payload['user'],
+                                                'status': 'RS_ERROR_DUPLICATE_TRANSACTION',
+                                                'request_uuid': payload['request_uuid']
+                                            }
+
+                                            res.json(response)
+                                        }
+                                    });;
+
+                                    tran_fields = " (amount, transactionId, roundId, betTime, status, clientId, creditId, winAmount )";
+                                    tran_values = ` ( ${payload.amount}, '${payload.transaction_uuid}',  '${payload.roundId}' ,  NOW() ,  '${payload.status}',  '${payload.user_id}', '${payload.creditId}', '${payload.winAmount || 0}')`;
+                                    await walletModel.insertTransactionCbet(tran_fields, tran_values).then((data) => {
+                                        console.log(data);
+                                    }, (err) => {
+                                        if (err.message.includes("Duplicate entry")) {
+                                            let response = {
+                                                'user': payload['user'],
+                                                'status': 'RS_ERROR_DUPLICATE_TRANSACTION',
+                                                'request_uuid': payload['request_uuid']
+                                            }
+
+                                            res.json(response)
+                                        }
+                                    });
+
+
+                                    res.json(response);
+
+                                    // res.json(response);
+                                });
+                            }
+                        })
+                    }
+                })
                 // prev_response = db['transactions'].find_one({ 'request_uuid': payload['request_uuid'] });
 
 
@@ -192,25 +258,6 @@ exports.debit = [
 
 
                 // let response = await getBalance(jwt_decoded, payload);
-                getBalance(jwt_decoded, payload).then(async (response) => {
-
-                    console.log("jhhhsvjvsdjvsjv", response)
-
-                    await userModel.updateUserCasinoProfit(payload);
-
-                    let tran_fields = " (balance, request_uuid, transaction_uuid, user_id, rolled_back, transaction_type, supplier_user, supplier_transaction_id )";
-                    let tran_values = ` ( ${payload.amount}, '${payload.user_id}', '${payload.transaction_uuid}', '${payload.user_id}', 'Y', '${payload.transaction_type}', '${payload.supplier_user}', '${payload.supplier_transaction_id}' )`;
-                    await walletModel.insertTransactionFieldValues(tran_fields, tran_values);
-
-                    tran_fields = " (amount, clientId, transactionId )";
-                    tran_values = ` ( ${payload.amount}, '${payload.user_id}', '${payload.transaction_uuid}' )`;
-                    await walletModel.insertTransactionCbet(tran_fields, tran_values);
-
-
-                    res.json(response);
-
-                    // res.json(response);
-                });
 
                 // token = db['tokens'].find_one({ 'username': payload['user'], 'token': payload['token'] }, { 'expired': 1, '_id': 0 })
 
@@ -409,16 +456,40 @@ exports.credit = [
                 // prev_response = db['transactions'].find_one({ 'request_uuid': payload['request_uuid'] })
 
                 // prev_transaction = db['transactions'].find_one({ 'transaction_uuid': payload['transaction_uuid'] })
+                walletModel.getTransactionByReqUUID(payload).then((prev_req) => {
+                    if (prev_req.length) {
+                        let response = {
+                            'user': payload['user'],
+                            'status': 'RS_ERROR_DUPLICATE_REQUEST',
+                            'request_uuid': payload['request_uuid']
+                        }
 
-                await userModel.updateUserProfit(payload);
+                        res.json(response)
+                    } else {
+                        walletModel.getTransactionByTransactionUUID(payload).then(async (prev_tran) => {
+                            if (prev_tran.length) {
+                                let response = {
+                                    'user': payload['user'],
+                                    'status': 'RS_ERROR_DUPLICATE_TRANSACTION',
+                                    'request_uuid': payload['request_uuid']
+                                }
 
-                let tran_fields = " (balance, request_uuid, transaction_uuid, user_id, rolled_back, transaction_type, supplier_user, supplier_transaction_id )";
-                let tran_values = ` ( ${payload.amount}, '${payload.request_uuid}', '${payload.transaction_uuid}', '${payload.user_id}', 'Y', '${payload.transaction_type}', '${payload.supplier_user}', '${payload.supplier_transaction_id}' )`;
-                await walletModel.insertTransactionFieldValues(tran_fields, tran_values);
+                                res.json(response)
+                            } else {
+                                await userModel.updateUserProfit(payload);
 
-                getBalance(decoded, payload).then((response) => {
-                    res.json(response);
+                                let tran_fields = " (balance, request_uuid, transaction_uuid, user_id, rolled_back, transaction_type, supplier_user, supplier_transaction_id )";
+                                let tran_values = ` ( ${payload.amount}, '${payload.request_uuid}', '${payload.transaction_uuid}', '${payload.user_id}', 'Y', 'credit', '${payload.supplier_user}', '${payload.supplier_transaction_id}' )`;
+                                await walletModel.insertTransactionFieldValues(tran_fields, tran_values);
+
+                                getBalance(decoded, payload).then((response) => {
+                                    res.json(response);
+                                });
+                            }
+                        })
+                    }
                 });
+
 
                 // token = db['tokens'].find_one({ 'username': payload['user'], 'token': payload['token'] }, { 'expired': 1, '_id': 0 })
                 // walletModel.getTokenByUserToken(payload).then((token) => {
@@ -580,22 +651,45 @@ exports.rollback = [
 
         if (verification) {
 
+            walletModel.getTransactionByReqUUID(payload).then(async (prev_req) => {
+                if (prev_req.length) {
+                    let response = {
+                        'user': payload['user'],
+                        'status': 'RS_ERROR_DUPLICATE_REQUEST',
+                        'request_uuid': payload['request_uuid']
+                    }
+
+                    res.json(response)
+                } else {
+                    let tran_fields = " (balance, request_uuid, transaction_uuid, user_id, rolled_back, transaction_type, supplier_user, supplier_transaction_id )";
+                    let tran_values = ` ( ${payload.balance}, '${payload.request_uuid}', '${payload.transaction_uuid}', '${payload.user_id}', 'Y', '${payload.transaction_type}', '${payload.supplier_user}', '${payload.supplier_transaction_id}' )`;
+                    console.log("values", tran_values);
+                    await walletModel.insertTransactionFieldValues(tran_fields, tran_values);
+                    walletModel.getTransactionByTransactionUUID(payload).then(async (prev_transaction) => {
+                        if (prev_transaction.length) {
+                            prev_transaction = prev_transaction[0];
+                            await walletModel.subtractBalanceWithCurrent(prev_transaction['amount']).then((data) => {
+                                console.log(data);
+                            }, (err) => {
+                                console.log(err);
+                            });
+                        } else {
+                            let response = {
+                                'user': payload['user_id'],
+                                'status': 'RS_ERROR_TRANSACTION_NOT_FOUND',
+                                'request_uuid': payload['transaction_uuid']
+                            }
+
+                            res.json(response);
+                        }
+                    });
+                    getBalance(decoded, payload).then(response => {
+                        res.json(response);
+                    });
+                }
+            });
+
             // prev_transaction = db['transactions'].find_one({ 'transaction_uuid': payload['transaction_uuid'] })
-            let tran_fields = " (balance, request_uuid, transaction_uuid, user_id, rolled_back, transaction_type, supplier_user, supplier_transaction_id )";
-            let tran_values = ` ( ${payload.balance}, '${payload.request_uuid}', '${payload.transaction_uuid}', '${payload.user_id}', 'Y', '${payload.transaction_type}', '${payload.supplier_user}', '${payload.supplier_transaction_id}' )`;
-            console.log("values", tran_values);
-            await walletModel.insertTransactionFieldValues(tran_fields, tran_values);
-            walletModel.getTransactionByTransactionUUID(payload).then(async (prev_transaction) => {
-                prev_transaction = prev_transaction[0];
-                await walletModel.subtractBalanceWithCurrent(prev_transaction['amount']).then((data) => {
-                    console.log(data);
-                }, (err) => {
-                    console.log(err);
-                });
-            });
-            getBalance(decoded, payload).then(response => {
-                res.json(response);
-            });
 
         } else {
             let response = {

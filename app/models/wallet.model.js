@@ -27,7 +27,7 @@ const walletModel = {
 
 function insertTransactionFieldValues(fields, values) {
     return new Promise((resolve,reject) => {
-        db.query(`INSERT IGNORE INTO transactions ${fields} VALUES ${values}`,(error,rows,fields)=>{
+        db.query(`INSERT INTO transactions ${fields} VALUES ${values}`,(error,rows,fields)=>{
             if(!!error) {
                 dbFunc.connectionRelease;
                 reject(error);
@@ -41,7 +41,7 @@ function insertTransactionFieldValues(fields, values) {
 
 function insertTransactionCbet(fields, values) {
     return new Promise((resolve,reject) => {
-        db.query(`INSERT IGNORE INTO cbet ${fields} VALUES ${values}`,(error,rows,fields)=>{
+        db.query(`INSERT INTO cbet ${fields} VALUES ${values}`,(error,rows,fields)=>{
             if(!!error) {
                 dbFunc.connectionRelease;
                 reject(error);
