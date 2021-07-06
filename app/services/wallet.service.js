@@ -10,10 +10,10 @@ const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const forge = require('node-forge');
 let secretKey = process.env.JWT_SECRET;
-let pkey = fs.readFileSync(path.resolve("./app/services/ProductionPublicKey.txt"));
+let pkey = fs.readFileSync(path.resolve("./app/services/ProductionPublicKey.pem"));
 let public_key = forge.pki.publicKeyFromPem(pkey);   // Using this key in unsigning is giving errors
 
-let public_keyPath = path.resolve("./app/services/ProductionPublicKey.txt");
+let public_keyPath = path.resolve("./app/services/ProductionPublicKey.pem");
 // let private_keyPath = path.resolve("./app/services/ProductionPrivateKey.txt");
 // let secret_keyPath = path.resolve("./app/services/SecretKey.txt");
 
@@ -139,6 +139,7 @@ exports.debit = [
 
         if (verification) {
             try {
+                let jwt_decoded;
                 jwt.verify(payload.token, secretKey, (err, decoded) => {
                     if (err) {
                         // console.log(err);
@@ -177,7 +178,7 @@ exports.debit = [
                             res.json(response);
                         }
 
-
+                        jwt_decoded = decoded;
 
                     }
                 });
@@ -185,183 +186,152 @@ exports.debit = [
 
                 // prev_response = db['transactions'].find_one({ 'request_uuid': payload['request_uuid'] });
 
-                walletModel.getTransactionByReqUUID(payload).then((prev_response) => {
 
-                    if (prev_response.length) {
-                        prev_response = prev_response[0];
-                        response = {
-                            'user': payload['user_id'],
-                            'status': 'RS_OK',
-                            'request_uuid': payload['request_uuid'],
-                            'balance': prev_response['balance'] * 100000
-                        }
-                        res.json(response);
-                    } else {
-
-                        // prev_transaction = db['transactions'].find_one({ 'transaction_uuid': payload['transaction_uuid'] })
-
-                        walletModel.getTransactionByTransactionUUID(payload).then(async (prev_transaction) => {
-
-                            if (prev_transaction.length) {
-
-                                prev_transaction = prev_transaction[0];
-
-                                if (payload['round'] == prev_transaction['round'] && payload['amount'] == (prev_transaction['amount'] * 100000)) {
-                                    response = {
-                                        'user': payload['user_id'],
-                                        'status': 'RS_OK',
-                                        'request_uuid': payload['request_uuid'],
-                                        'balance': prev_transaction['balance'] * 100000
-                                    }
-                                    res.json(response)
-
-                                } else {
-                                    response = {
-                                        'user': payload['user_id'],
-                                        'status': 'RS_ERROR_DUPLICATE_TRANSACTION',
-                                        'request_uuid': payload['request_uuid']
-                                    }
-                                    res.json(response)
-                                }
-                            }
-
-                            await userModel.updateUserCasinoProfit(payload);
-
-                            let response = {
-                                'user': payload['user_id'],
-                                'status': 'RS_OK',
-                                'request_uuid': payload['request_uuid']
-                            }
-
-                            let tran_fields = " (balance, request_uuid, transaction_uuid, user_id, rolled_back, transaction_type, supplier_user, supplier_transaction_id )";
-                            let tran_fields1 = " (amount, request_uuid, transaction_uuid, user_id, rolled_back, transaction_type, supplier_user, supplier_transaction_id )";
-                            let tran_values = ` ( ${payload.amount}, '${payload.request_uuid}', '${payload.transaction_uuid}', '${payload.user_id}', 'Y', '${payload.transaction_type}', '${payload.supplier_user}', '${payload.supplier_transaction_id}' )`;
-                            await walletModel.insertTransactionFieldValues(tran_fields, tran_values);
-                            await walletModel.insertTransactionCbet(tran_fields1, tran_values);
+                // prev_transaction = db['transactions'].find_one({ 'transaction_uuid': payload['transaction_uuid'] })
 
 
-                            res.json(response);
 
-                            // token = db['tokens'].find_one({ 'username': payload['user'], 'token': payload['token'] }, { 'expired': 1, '_id': 0 })
+                // let response = await getBalance(jwt_decoded, payload);
+                getBalance(jwt_decoded, payload).then(async (response) => {
 
-                            // walletModel.getTransactionByTransactionUUID(payload).then((token) => {
+                    console.log("jhhhsvjvsdjvsjv", response)
 
-                            //     if (!token.length) {
-                            //         response = {
-                            //             'user': payload['user_id'],
-                            //             'status': 'RS_ERROR_INVALID_TOKEN',
-                            //             'request_uuid': payload['request_uuid']
-                            //         }
-                            //         res.json(response)
-                            //     }
-                            //     if (token[0].token['expired'] == 'Y') {
-                            //         response = {
-                            //             'user': payload['user_id'],
-                            //             'status': 'RS_ERROR_TOKEN_EXPIRED',
-                            //             'request_uuid': payload['request_uuid']
-                            //         }
-                            //         res.json(response)
-                            //     }
+                    await userModel.updateUserCasinoProfit(payload);
 
-                            //     // required = {
-                            //     //     'user': 1,
-                            //     //     'user_status': 1,
-                            //     //     'bet_status': 1,
-                            //     //     'balance': 1,
-                            //     //     'casino_profit_loss': 1
-                            //     // }
+                    let tran_fields = " (balance, request_uuid, transaction_uuid, user_id, rolled_back, transaction_type, supplier_user, supplier_transaction_id )";
+                    let tran_values = ` ( ${payload.amount}, '${payload.user_id}', '${payload.transaction_uuid}', '${payload.user_id}', 'Y', '${payload.transaction_type}', '${payload.supplier_user}', '${payload.supplier_transaction_id}' )`;
+                    await walletModel.insertTransactionFieldValues(tran_fields, tran_values);
 
-                            //     // user = db['users'].find_one({ 'username': payload['user'] }, required)
+                    tran_fields = " (amount, clientId, transactionId )";
+                    tran_values = ` ( ${payload.amount}, '${payload.user_id}', '${payload.transaction_uuid}' )`;
+                    await walletModel.insertTransactionCbet(tran_fields, tran_values);
 
-                            //     userModel.getUserByUsername(payload['user_id']).then((user) => {
-                            //         if (user.length) {
 
-                            //             user = user[0];
-                            //             if (user['user_status'] == 'N' || user['bet_status'] == 'N') {
-                            //                 response = {
-                            //                     'user': payload['user_id'],
-                            //                     'status': 'RS_ERROR_USER_DISABLED',
-                            //                     'request_uuid': payload['request_uuid']
-                            //                 }
-                            //                 res.json(response)
-                            //             }
+                    res.json(response);
 
-                            //             // available_balance = requests.post('http://endpoint/user_expo/', json = { 'user_id': str(user['_id']) }).json()['user_balance']
-
-                            //             walletModel.getUserExposure(decoded).then(async (available_balance) => {
-                            //                 console.log("available_balance", available_balance);
-                            //                 if (available_balance.length) {
-                            //                     available_balance = available_balance[0];
-
-                            //                     if ((available_balance * 100000) >= payload['amount']) {
-                            //                         let balance = (available_balance * 100000) - payload['amount']
-                            //                         let profit_loss = user['casino_profit_loss'] - parseInt(payload['amount'] / 100000)
-
-                            //                         try {
-                            //                             let amount = parseInt(payload['amount'] / 100000)
-
-                            //                             payload['user_id'] = user['_id']
-                            //                             payload['transaction_time'] = date_time
-                            //                             payload['rolled_back'] = 'N'
-                            //                             payload['transaction_type'] = 'debit'
-                            //                             payload['amount'] = amount
-                            //                             payload['balance'] = parseInt(balance / 100000)
-
-                            //                             // _id = db['transactions'].insert_one(payload).inserted_id
-                            //                             // db['users'].update_one({ 'username': payload['user'] }, { '$set': { 'casino_profit_loss': profit_loss } })
-                            //                             await walletModel.insertTransaction(payload);
-
-                            //                             let response = {
-                            //                                 'user': payload['user_id'],
-                            //                                 'status': 'RS_OK',
-                            //                                 'request_uuid': payload['request_uuid'],
-                            //                                 'balance': balance
-                            //                             }
-
-                            //                             res.json(response)
-                            //                         } catch (err) {
-                            //                             let response = {
-                            //                                 'user': payload['user_id'],
-                            //                                 'status': 'RS_ERROR_UNKNOWN',
-                            //                                 'request_uuid': payload['request_uuid']
-                            //                             }
-
-                            //                             let data = {
-                            //                                 'user': payload['user_id'],
-                            //                                 'token': payload['token'],
-                            //                                 'date_time': new Date(),
-                            //                                 'error': err.stack
-                            //                             }
-
-                            //                             // db['casino_errors'].insert_one(data)
-                            //                             await errorModel.insertErrorObject(data);
-
-                            //                             res.json(response)
-                            //                         }
-                            //                     } else {
-                            //                         let response = {
-                            //                             'user': payload['user_id'],
-                            //                             'status': 'RS_ERROR_NOT_ENOUGH_MONEY',
-                            //                             'request_uuid': payload['request_uuid'],
-                            //                             'balance': available_balance * 100000
-                            //                         }
-
-                            //                         res.json(response)
-                            //                     }
-                            //                 } else {
-
-                            //                 }
-                            //             }, (err) => {
-                            //                 console.log("err1", err);
-                            //             }).catch((err) => {
-                            //                 console.log("err2", err);
-                            //             })
-                            //         }
-                            //     })
-                            // });
-                        });
-                    }
+                    // res.json(response);
                 });
+
+                // token = db['tokens'].find_one({ 'username': payload['user'], 'token': payload['token'] }, { 'expired': 1, '_id': 0 })
+
+                // walletModel.getTransactionByTransactionUUID(payload).then((token) => {
+
+                //     if (!token.length) {
+                //         response = {
+                //             'user': payload['user_id'],
+                //             'status': 'RS_ERROR_INVALID_TOKEN',
+                //             'request_uuid': payload['request_uuid']
+                //         }
+                //         res.json(response)
+                //     }
+                //     if (token[0].token['expired'] == 'Y') {
+                //         response = {
+                //             'user': payload['user_id'],
+                //             'status': 'RS_ERROR_TOKEN_EXPIRED',
+                //             'request_uuid': payload['request_uuid']
+                //         }
+                //         res.json(response)
+                //     }
+
+                //     // required = {
+                //     //     'user': 1,
+                //     //     'user_status': 1,
+                //     //     'bet_status': 1,
+                //     //     'balance': 1,
+                //     //     'casino_profit_loss': 1
+                //     // }
+
+                //     // user = db['users'].find_one({ 'username': payload['user'] }, required)
+
+                //     userModel.getUserByUsername(payload['user_id']).then((user) => {
+                //         if (user.length) {
+
+                //             user = user[0];
+                //             if (user['user_status'] == 'N' || user['bet_status'] == 'N') {
+                //                 response = {
+                //                     'user': payload['user_id'],
+                //                     'status': 'RS_ERROR_USER_DISABLED',
+                //                     'request_uuid': payload['request_uuid']
+                //                 }
+                //                 res.json(response)
+                //             }
+
+                //             // available_balance = requests.post('http://endpoint/user_expo/', json = { 'user_id': str(user['_id']) }).json()['user_balance']
+
+                //             walletModel.getUserExposure(decoded).then(async (available_balance) => {
+                //                 console.log("available_balance", available_balance);
+                //                 if (available_balance.length) {
+                //                     available_balance = available_balance[0];
+
+                //                     if ((available_balance * 100000) >= payload['amount']) {
+                //                         let balance = (available_balance * 100000) - payload['amount']
+                //                         let profit_loss = user['casino_profit_loss'] - parseInt(payload['amount'] / 100000)
+
+                //                         try {
+                //                             let amount = parseInt(payload['amount'] / 100000)
+
+                //                             payload['user_id'] = user['_id']
+                //                             payload['transaction_time'] = date_time
+                //                             payload['rolled_back'] = 'N'
+                //                             payload['transaction_type'] = 'debit'
+                //                             payload['amount'] = amount
+                //                             payload['balance'] = parseInt(balance / 100000)
+
+                //                             // _id = db['transactions'].insert_one(payload).inserted_id
+                //                             // db['users'].update_one({ 'username': payload['user'] }, { '$set': { 'casino_profit_loss': profit_loss } })
+                //                             await walletModel.insertTransaction(payload);
+
+                //                             let response = {
+                //                                 'user': payload['user_id'],
+                //                                 'status': 'RS_OK',
+                //                                 'request_uuid': payload['request_uuid'],
+                //                                 'balance': balance
+                //                             }
+
+                //                             res.json(response)
+                //                         } catch (err) {
+                //                             let response = {
+                //                                 'user': payload['user_id'],
+                //                                 'status': 'RS_ERROR_UNKNOWN',
+                //                                 'request_uuid': payload['request_uuid']
+                //                             }
+
+                //                             let data = {
+                //                                 'user': payload['user_id'],
+                //                                 'token': payload['token'],
+                //                                 'date_time': new Date(),
+                //                                 'error': err.stack
+                //                             }
+
+                //                             // db['casino_errors'].insert_one(data)
+                //                             await errorModel.insertErrorObject(data);
+
+                //                             res.json(response)
+                //                         }
+                //                     } else {
+                //                         let response = {
+                //                             'user': payload['user_id'],
+                //                             'status': 'RS_ERROR_NOT_ENOUGH_MONEY',
+                //                             'request_uuid': payload['request_uuid'],
+                //                             'balance': available_balance * 100000
+                //                         }
+
+                //                         res.json(response)
+                //                     }
+                //                 } else {
+
+                //                 }
+                //             }, (err) => {
+                //                 console.log("err1", err);
+                //             }).catch((err) => {
+                //                 console.log("err2", err);
+                //             })
+                //         }
+                //     })
+                // });
+
+
+
             } catch (err) {
                 console.log(err);
                 let response = {
@@ -437,153 +407,115 @@ exports.credit = [
                 }
 
                 // prev_response = db['transactions'].find_one({ 'request_uuid': payload['request_uuid'] })
-                walletModel.getTransactionByReqUUID(payload).then((prev_response) => {
-                    if (prev_response.length) {
-                        prev_response = prev_response[0];
-                        let response = {
-                            'user': payload['user'],
-                            'status': 'RS_OK',
-                            'request_uuid': payload['request_uuid'],
-                            'balance': prev_response['balance'] * 100000
-                        }
-                        res.json(response);
-                    } else {
-                        // prev_transaction = db['transactions'].find_one({ 'transaction_uuid': payload['transaction_uuid'] })
-                        walletModel.getTransactionByTransactionUUID(payload).then(async (prev_transaction) => {
-                            if (prev_transaction.length) {
-                                prev_transaction = prev_transaction[0];
-                                if (payload['round'] == prev_transaction['round'] && payload['amount'] == (prev_transaction['amount'] * 100000)) {
-                                    let response = {
-                                        'user': payload['user'],
-                                        'status': 'RS_OK',
-                                        'request_uuid': payload['request_uuid'],
-                                        'balance': prev_transaction['balance'] * 100000
-                                    }
 
-                                    res.json(response)
-                                } else {
-                                    let response = {
-                                        'user': payload['user'],
-                                        'status': 'RS_ERROR_DUPLICATE_TRANSACTION',
-                                        'request_uuid': payload['request_uuid']
-                                    }
+                // prev_transaction = db['transactions'].find_one({ 'transaction_uuid': payload['transaction_uuid'] })
 
-                                    res.json(response)
-                                }
-                            }
-                            await userModel.updateUserProfit(payload);
+                await userModel.updateUserProfit(payload);
 
-                            let tran_fields = " (balance, request_uuid, transaction_uuid, user_id, rolled_back, transaction_type, supplier_user, supplier_transaction_id )";
-                            let tran_values = ` ( ${payload.amount}, '${payload.request_uuid}', '${payload.transaction_uuid}', '${payload.user_id}', 'Y', '${payload.transaction_type}', '${payload.supplier_user}', '${payload.supplier_transaction_id}' )`;
-                            await walletModel.insertTransactionFieldValues(tran_fields, tran_values);
+                let tran_fields = " (balance, request_uuid, transaction_uuid, user_id, rolled_back, transaction_type, supplier_user, supplier_transaction_id )";
+                let tran_values = ` ( ${payload.amount}, '${payload.request_uuid}', '${payload.transaction_uuid}', '${payload.user_id}', 'Y', '${payload.transaction_type}', '${payload.supplier_user}', '${payload.supplier_transaction_id}' )`;
+                await walletModel.insertTransactionFieldValues(tran_fields, tran_values);
 
-                            let response = {
-                                'user': payload['user_id'],
-                                'status': 'RS_OK',
-                                'request_uuid': payload['request_uuid']
-                            }
+                getBalance(decoded, payload).then((response) => {
+                    res.json(response);
+                });
 
-                            res.json(response);
+                // token = db['tokens'].find_one({ 'username': payload['user'], 'token': payload['token'] }, { 'expired': 1, '_id': 0 })
+                // walletModel.getTokenByUserToken(payload).then((token) => {
+                //     if (!token.length) {
+                //         let response = {
+                //             'user': payload['user'],
+                //             'status': 'RS_ERROR_INVALID_TOKEN',
+                //             'request_uuid': payload['request_uuid']
+                //         }
+                //         res.json(response);
+                //     }
 
-                            // token = db['tokens'].find_one({ 'username': payload['user'], 'token': payload['token'] }, { 'expired': 1, '_id': 0 })
-                            // walletModel.getTokenByUserToken(payload).then((token) => {
-                            //     if (!token.length) {
-                            //         let response = {
-                            //             'user': payload['user'],
-                            //             'status': 'RS_ERROR_INVALID_TOKEN',
-                            //             'request_uuid': payload['request_uuid']
-                            //         }
-                            //         res.json(response);
-                            //     }
+                //     // transaction_exist = db['transactions'].find_one({ 'transaction_uuid': payload['reference_transaction_uuid'] })
+                //     walletModel.transactionExists(payload).then((transaction_exist) => {
 
-                            //     // transaction_exist = db['transactions'].find_one({ 'transaction_uuid': payload['reference_transaction_uuid'] })
-                            //     walletModel.transactionExists(payload).then((transaction_exist) => {
+                //         if (!transaction_exist.length) {
+                //             let response = {
+                //                 'user': payload['user'],
+                //                 'status': 'RS_ERROR_TRANSACTION_DOES_NOT_EXIST',
+                //                 'request_uuid': payload['request_uuid']
+                //             }
+                //             res.json(response)
+                //         }
 
-                            //         if (!transaction_exist.length) {
-                            //             let response = {
-                            //                 'user': payload['user'],
-                            //                 'status': 'RS_ERROR_TRANSACTION_DOES_NOT_EXIST',
-                            //                 'request_uuid': payload['request_uuid']
-                            //             }
-                            //             res.json(response)
-                            //         }
+                //         // required = {
+                //         //     'user': 1,
+                //         //     'balance': 1,
+                //         //     'casino_profit_loss': 1
+                //         // }
+                //         // user = db['users'].find_one({ 'username': payload['user'] }, required)
+                //         userModel.getUserByUsername(payload).then((user) => {
+                //             if (user.length) {
+                //                 user = user[0];
 
-                            //         // required = {
-                            //         //     'user': 1,
-                            //         //     'balance': 1,
-                            //         //     'casino_profit_loss': 1
-                            //         // }
-                            //         // user = db['users'].find_one({ 'username': payload['user'] }, required)
-                            //         userModel.getUserByUsername(payload).then((user) => {
-                            //             if (user.length) {
-                            //                 user = user[0];
-
-                            //                 // available_balance = requests.post('http://endpoint/user_expo/', json = { 'user_id': str(user['_id']) }).json()['user_balance']
+                //                 // available_balance = requests.post('http://endpoint/user_expo/', json = { 'user_id': str(user['_id']) }).json()['user_balance']
 
 
-                            //                         walletModel.getUserExposure(decoded).then(async (available_balance) => {
+                //                         walletModel.getUserExposure(decoded).then(async (available_balance) => {
 
-                            //                             if (available_balance.length) {
-                            //                                 available_balance = available_balance[0];
+                //                             if (available_balance.length) {
+                //                                 available_balance = available_balance[0];
 
-                            //                                 let balance = (available_balance * 100000) + payload['amount'];
-                            //                                 let profit_loss = user['casino_profit_loss'] + parseInt(payload['amount'] / 100000);
+                //                                 let balance = (available_balance * 100000) + payload['amount'];
+                //                                 let profit_loss = user['casino_profit_loss'] + parseInt(payload['amount'] / 100000);
 
-                            //                                 try {
-                            //                                     let amount = parseInt(payload['amount'] / 100000)
+                //                                 try {
+                //                                     let amount = parseInt(payload['amount'] / 100000)
 
-                            //                                     payload['user_id'] = user['_id'];
-                            //                                     payload['transaction_time'] = date_time;
-                            //                                     payload['rolled_back'] = 'N';
-                            //                                     payload['transaction_type'] = 'credit';
-                            //                                     payload['amount'] = amount;
-                            //                                     payload['balance'] = parseInt(balance / 100000);
+                //                                     payload['user_id'] = user['_id'];
+                //                                     payload['transaction_time'] = date_time;
+                //                                     payload['rolled_back'] = 'N';
+                //                                     payload['transaction_type'] = 'credit';
+                //                                     payload['amount'] = amount;
+                //                                     payload['balance'] = parseInt(balance / 100000);
 
-                            //                                     // _id = db['transactions'].insert_one(payload).inserted_id
-                            //                                     await walletModel.insertTransaction(payload);
+                //                                     // _id = db['transactions'].insert_one(payload).inserted_id
+                //                                     await walletModel.insertTransaction(payload);
 
-                            //                                     // db['users'].update_one({ 'username': payload['user'] }, { '$set': { 'casino_profit_loss': profit_loss } })
+                //                                     // db['users'].update_one({ 'username': payload['user'] }, { '$set': { 'casino_profit_loss': profit_loss } })
 
-                            //                                     await userModel.updateUserCasinoProfit(payload['user'], profit_loss);
-
-
-                            //                                     let response = {
-                            //                                         'user': payload['user'],
-                            //                                         'status': 'RS_OK',
-                            //                                         'request_uuid': payload['request_uuid'],
-                            //                                         'balance': balance
-                            //                                     }
-                            //                                     res.json(response)
-                            //                                 } catch (err) {
-                            //                                     let response = {
-                            //                                         'user': payload['user'],
-                            //                                         'status': 'RS_ERROR_UNKNOWN',
-                            //                                         'request_uuid': payload['request_uuid']
-                            //                                     }
-
-                            //                                     let data = {
-                            //                                         'user': payload['user'],
-                            //                                         'token': payload['token'],
-                            //                                         'date_time': new Date(),
-                            //                                         'error': err.stack
-                            //                                     }
-
-                            //                                     // db['casino_errors'].insert_one(data)
-                            //                                     await errorModel.insertErrorObject(data);
-
-                            //                                     res.json(response)
-                            //                                 }
-                            //                             }
-                            //                         });
+                //                                     await userModel.updateUserCasinoProfit(payload['user'], profit_loss);
 
 
-                            //             }
-                            //         })
-                            //     });
-                            // });
-                        });
-                    }
-                })
+                //                                     let response = {
+                //                                         'user': payload['user'],
+                //                                         'status': 'RS_OK',
+                //                                         'request_uuid': payload['request_uuid'],
+                //                                         'balance': balance
+                //                                     }
+                //                                     res.json(response)
+                //                                 } catch (err) {
+                //                                     let response = {
+                //                                         'user': payload['user'],
+                //                                         'status': 'RS_ERROR_UNKNOWN',
+                //                                         'request_uuid': payload['request_uuid']
+                //                                     }
+
+                //                                     let data = {
+                //                                         'user': payload['user'],
+                //                                         'token': payload['token'],
+                //                                         'date_time': new Date(),
+                //                                         'error': err.stack
+                //                                     }
+
+                //                                     // db['casino_errors'].insert_one(data)
+                //                                     await errorModel.insertErrorObject(data);
+
+                //                                     res.json(response)
+                //                                 }
+                //                             }
+                //                         });
+
+
+                //             }
+                //         })
+                //     });
+                // });
             } catch (err) {
                 let response = {
                     'user': payload['user'],
@@ -617,7 +549,7 @@ exports.credit = [
 
 exports.rollback = [
     getAuth,
-    (req, res) => {
+    async (req, res) => {
         let date_time = new Date();
         let headers = req.headers;
         let payload = req.body;
@@ -648,65 +580,23 @@ exports.rollback = [
 
         if (verification) {
 
-            walletModel.getTransactionByReqUUID(payload).then((prev_response) => {
-                if (prev_response.length) {
-                    prev_response = prev_response[0];
-                    let response = {
-                        'user': payload['user'],
-                        'status': 'RS_OK',
-                        'request_uuid': payload['request_uuid'],
-                        'balance': prev_response['balance'] * 100000
-                    }
-                    res.json(response);
-                } else {
-                    // prev_transaction = db['transactions'].find_one({ 'transaction_uuid': payload['transaction_uuid'] })
-                    walletModel.getCreditTransactionByTransactionUUID(payload).then(async (prev_transaction) => {
-                        if (prev_transaction.length) {
-                            prev_transaction = prev_transaction[0];
-                            if (payload['round'] == prev_transaction['round'] && payload['amount'] == (prev_transaction['amount'] * 100000)) {
-                                let response = {
-                                    'user': payload['user'],
-                                    'status': 'RS_OK',
-                                    'request_uuid': payload['request_uuid'],
-                                    'balance': prev_transaction['balance'] * 100000
-                                }
-
-                                res.json(response)
-                            } else {
-                                let response = {
-                                    'user': payload['user'],
-                                    'status': 'RS_ERROR_DUPLICATE_TRANSACTION',
-                                    'request_uuid': payload['request_uuid']
-                                }
-
-                                res.json(response)
-                            }
-                            let tran_fields = " (balance, request_uuid, transaction_uuid, user_id, rolled_back, transaction_type, supplier_user, supplier_transaction_id )";
-                            let tran_values = ` ( ${payload.balance}, '${payload.request_uuid}', '${payload.transaction_uuid}', '${payload.user_id}', 'Y', '${payload.transaction_type}', '${payload.supplier_user}', '${payload.supplier_transaction_id}' )`;
-                            await walletModel.insertTransactionFieldValues(tran_fields, tran_values);
-
-                            await walletModel.subtractBalanceWithCurrent(prev_transaction['amount']).then((data)=>{
-                                console.log(data);
-                            },(err)=>{
-                                console.log(err);
-                            });
-
-                            let response = {
-                                'user': payload['user_id'],
-                                'status': 'RS_OK',
-                                'request_uuid': payload['request_uuid'],
-                            }
-                            res.json(response);
-                        }else{
-                            res.json({
-                                'user': payload['user_id'],
-                                'status': 'PREV_TRANSACTION_NOT_FOUND',
-                                'request_uuid': payload['request_uuid'],
-                            });
-                        }
-                    })
-                }
+            // prev_transaction = db['transactions'].find_one({ 'transaction_uuid': payload['transaction_uuid'] })
+            let tran_fields = " (balance, request_uuid, transaction_uuid, user_id, rolled_back, transaction_type, supplier_user, supplier_transaction_id )";
+            let tran_values = ` ( ${payload.balance}, '${payload.request_uuid}', '${payload.transaction_uuid}', '${payload.user_id}', 'Y', '${payload.transaction_type}', '${payload.supplier_user}', '${payload.supplier_transaction_id}' )`;
+            console.log("values", tran_values);
+            await walletModel.insertTransactionFieldValues(tran_fields, tran_values);
+            walletModel.getTransactionByTransactionUUID(payload).then(async (prev_transaction) => {
+                prev_transaction = prev_transaction[0];
+                await walletModel.subtractBalanceWithCurrent(prev_transaction['amount']).then((data) => {
+                    console.log(data);
+                }, (err) => {
+                    console.log(err);
+                });
             });
+            getBalance(decoded, payload).then(response => {
+                res.json(response);
+            });
+
         } else {
             let response = {
                 'user': payload['user_id'],
@@ -873,6 +763,39 @@ function verify_signature(data, sign) {
 
 }
 
+function getBalance(jwt_decoded, payload) {
+    return new Promise(async (resolve, reject) => {
+        await walletModel.getWalletByUser(jwt_decoded).then(async (user) => {
+            // console.log("user", user);
+
+            await walletModel.getUserExposure(jwt_decoded).then((userExposure) => {
+                console.log("userExposure", userExposure);
+                if (userExposure.length) {
+                    let curr_limit = user[0].curr_limit;
+                    let available_balance = curr_limit - userExposure[0].exposure;
+                    let resp = {
+                        'user': payload['user'],
+                        'status': 'RS_OK',
+                        'request_uuid': payload['request_uuid'],
+                        'balance': available_balance * 100000
+                    }
+                    console.log(resp);
+                    resolve(resp);
+                } else {
+                    console.log("555555555555555555558888888");
+                    resolve({ exposure: 0 });
+                }
+            }, (err) => {
+                console.log("err1", err);
+                resolve({ exposure: 0 });
+            }).catch((err) => {
+                console.log("err2", err);
+                resolve({ exposure: 0 });
+            })
+
+        })
+    })
+}
 // function verify_signature(data, signature) {
 //     try {
 //         // const decryptedData =JSON.parse(private_key.decrypt(signature,"utf8"))

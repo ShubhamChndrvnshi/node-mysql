@@ -6,8 +6,9 @@ const NodeRSA = require('node-rsa');
 const jwt = require("jsonwebtoken");
 const { base64encode } = require('nodejs-base64');
 const axios = require('axios');
+const crypto = require("crypto");
 
-let private_keyPath = path.resolve("./app/services/ProductionPrivateKey.txt");
+let private_keyPath = path.resolve("./app/services/ProductionPrivateKey.pem");
 // let secret_keyPath = path.resolve("./app/services/SecretKey.txt");
 
 // let private_key = new NodeRSA(fs.readFileSync(private_keyPath));
