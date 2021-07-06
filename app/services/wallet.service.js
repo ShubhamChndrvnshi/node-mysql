@@ -198,7 +198,7 @@ exports.debit = [
                         response.currency = payload['currency'];
                         res.json(response)
                     } else {
-                        walletModel.getTransactionByTransactionUUID(payload).then((prev_tran) => {
+                        walletModel.getTransactionByTransactionUUID(payload).then(async (prev_tran) => {
                             if (prev_tran.length > 0) {
                                 let response = {
                                     'user': payload['user_id'],
@@ -208,11 +208,10 @@ exports.debit = [
                                 response.currency = payload['currency'];
                                 res.json(response)
                             } else {
+                                await userModel.updateUserCasinoProfit(payload);
                                 getBalance(jwt_decoded, payload).then(async (responsed) => {
 
                                     console.log("jhhhsvjvsdjvsjv", responsed)
-
-                                    await userModel.updateUserCasinoProfit(payload);
 
 
                                     let tran_fields = " (amount, transactionId, roundId, betTime, status, clientId, creditId, winAmount )";
@@ -474,8 +473,8 @@ exports.credit = [
                                 response.currency = payload['currency'];
                                 res.json(response)
                             } else {
+                                await userModel.updateUserProfit(payload).then((data) => { console.log(data); }, (err) => { console.log(err); });
                                 getBalance(decoded, payload).then(async (responsed) => {
-                                    await userModel.updateUserProfit(payload).then((data) => { console.log(data); }, (err) => { console.log(err); });
 
                                     let tran_fields = " (amount, balance, request_uuid, transaction_uuid, user_id, rolled_back, transaction_type, supplier_user, supplier_transaction_id )";
                                     let tran_values = ` ( ${payload.amount}, ${responsed.balance}, '${payload.request_uuid}', '${payload.transaction_uuid}', '${payload.user_id}', 'N', 'credit', '${payload.supplier_user}', '${payload.supplier_transaction_id}' )`;
@@ -663,37 +662,37 @@ exports.rollback = [
                     response.currency = payload['currency'];
                     res.json(response)
                 } else {
-                    getBalance(decoded, payload).then(async (responsed) => {
 
-                        let tran_fields = " (balance, request_uuid, transaction_uuid, user_id, rolled_back, transaction_type )";
-                        let tran_values = ` ( ${responsed.balance}, '${payload.request_uuid}', '${payload.transaction_uuid}', '${payload.user_id}', 'Y', 'rollback')`;
-                        console.log("values", tran_values);
-
-                        walletModel.getTransactionByTransactionUUIDRollback(payload).then(async (prev_transaction) => {
+                    walletModel.getTransactionByTransactionUUIDRollback(payload).then(async (prev_transaction) => {
+                        if (prev_transaction.length) {
+                            console.log("Prevkjkjkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk", prev_transaction);
+                            prev_transaction = prev_transaction[0];
+                            await walletModel.updateTransactionStatusByTransactionUUID(payload);
+                            await walletModel.subtractBalanceWithCurrent(prev_transaction['amount'], payload['user_id']).then((data) => {
+                                console.log(data);
+                            }, (err) => {
+                                console.log(err);
+                            });
+                            let responsed = await getBalance(decoded, payload);
+                            let tran_fields = " ( balance, request_uuid, transaction_uuid, user_id, rolled_back, transaction_type )";
+                            let tran_values = ` (  ${responsed.balance}, '${payload.request_uuid}', '${payload.transaction_uuid}', '${payload.user_id}', 'Y', 'rollback')`;
                             await walletModel.insertTransactionFieldValues(tran_fields, tran_values);
-                            if (prev_transaction.length) {
-                                console.log("Prevkjkjkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk", prev_transaction);
-                                prev_transaction = prev_transaction[0];
-                                await walletModel.updateTransactionStatusByTransactionUUID(payload);
-                                await walletModel.subtractBalanceWithCurrent(prev_transaction['amount'],payload['user_id']).then((data) => {
-                                    console.log(data);
-                                }, (err) => {
-                                    console.log(err);
-                                });
-                            } else {
-                                let response = {
-                                    'user': payload['user_id'],
-                                    'status': 'RS_OK',
-                                    'request_uuid': payload['transaction_uuid']
-                                }
-                                response.currency = payload['currency'];
-
-                                res.json(response);
-                            }
+                            console.log("values", tran_values);
                             responsed.currency = payload['currency'];
                             res.json(responsed);
-                        });
+                        } else {
+                            let response = {
+                                'user': payload['user_id'],
+                                'status': 'RS_OK',
+                                'request_uuid': payload['transaction_uuid']
+                            }
+                            response.currency = payload['currency'];
+
+                            res.json(response);
+                        }
+
                     });
+
                 }
             });
 
