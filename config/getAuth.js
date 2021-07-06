@@ -107,7 +107,17 @@ const getAuth = (req, res, next) => {
               res.json(response);
             }
           } else {
-            req["decoded"] = decoded;
+            walletModel.getTokenByUserToken(payload).then((data)=>{
+              if(data,length){
+                req["decoded"] = decoded;
+              }else{
+                res.json({
+                  'user': payload['user_id'],
+                'status': 'RS_ERROR_INVALID_USER_TOKEN',
+                'request_uuid': payload['request_uuid']
+                })
+              }
+            })
           }
         });
       })
