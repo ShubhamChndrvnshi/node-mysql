@@ -72,6 +72,9 @@ function insertTransaction(payload){
     let values = "";
     Object.entries(payload).forEach(
         ([key, value]) => {
+            if(typeof(value) != "number"){
+                value = `'${value}'`;
+            }
             fields = fields + key+ ","
             values = values + value+ ","
         }
@@ -111,6 +114,9 @@ function upsertUserToken(payload) {
     let values = "";
     Object.entries(payload).forEach(
         ([key, value]) => {
+            if(typeof(value) != "number"){
+                value = `'${value}'`;
+            }
             fields = fields + key+ ","
             values = values + value+ ","
         }
