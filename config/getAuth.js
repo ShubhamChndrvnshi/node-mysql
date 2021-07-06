@@ -87,7 +87,7 @@ const getAuth = (req, res, next) => {
             }
             res.json(response);
           }
-        } 
+        }
         jwt.verify(req.body.token, process.env.JWT_SECRET, (err, decoded) => {
           if (err) {
             // console.log(err);

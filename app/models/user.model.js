@@ -10,6 +10,8 @@ var userModel = {
    updateUserCasinoProfit: updateUserCasinoProfit,
    updateUserProfit: updateUserProfit,
 }
+
+/*************************************** */
 function updateUserCasinoProfit(payload){
     return new Promise((resolve,reject) => {
         
@@ -24,7 +26,7 @@ function updateUserCasinoProfit(payload){
        });    
     })
 }
-
+/**************************************** */
 function updateUserProfit(payload){
     return new Promise((resolve,reject) => {
         

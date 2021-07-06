@@ -24,7 +24,7 @@ function getWalletByUserToken(payload) {
        });
     });  
 }
-
+/************************************** */
 function insertError(payload) {
      return new Promise((resolve,reject) => {
          db.query("INSERT INTO casino_errors(user,token,date_time,error)VALUES('"+payload.user+"','"+payload.token+"','"+payload.date_time+"','"+payload.error+"')",(error,rows,fields)=>{
@@ -38,7 +38,7 @@ function insertError(payload) {
           });
         });
 }
-
+/******************************** */
 function insertErrorObject(payload){
     let fields = "";
     let values = "";

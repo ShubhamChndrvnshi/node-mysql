@@ -1,7 +1,7 @@
 const walletModel = require("../models/wallet.model");
 const fs = require("fs");
 const path = require("path");
-const getAuth = require("../../config/getAuth");
+const getAuth = require("../../config/auth");
 const NodeRSA = require('node-rsa');
 const jwt = require("jsonwebtoken");
 const { base64encode } = require('nodejs-base64');
