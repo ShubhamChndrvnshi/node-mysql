@@ -27,7 +27,7 @@ exports.balance = [
     (req, res) => {
         let headers = req.headers['casino-signature'];
         let payload = req.body;
-
+        payload["user_id"] = payload["user"];
         let verification = verify_signature(payload, headers);
         console.log(verification);
         if (verification) {
@@ -65,20 +65,24 @@ exports.balance = [
 
                                 // let user = db['users'].find_one({ 'username': payload['user'] }, required)
                                 walletModel.getWalletByUser(decoded).then((user) => {
-                                    // console.log("user", user);
+                                    console.log("user", user);
 
                                     walletModel.getUserExposure(decoded).then((userExposure) => {
-                                        console.log("userExposure", userExposure);
+                                        // console.log("userExposure", userExposure);
                                         if (userExposure.length) {
                                             let curr_limit = user[0].curr_limit;
                                             let available_balance = curr_limit - userExposure[0].exposure;
-                                            let resp = {
-                                                'user': payload['user_id'],
-                                                'status': 'RS_OK',
-                                                'request_uuid': payload['request_uuid'],
-                                                'balance': available_balance * 100000
-                                            }
-                                            res.json(resp);
+                                            walletModel.transactionExists(payload["request_uuid"]).then((transaction)=>{
+                                                console.log(transaction);
+                                                let resp = {
+                                                    'user': payload['user_id'],
+                                                    'status': 'RS_OK',
+                                                    'request_uuid': payload['request_uuid'],
+                                                    'balance': available_balance * 100000,
+                                                    'currency': transaction[0]?.currency || payload.currency || "NOT_FOUND"
+                                                }
+                                                res.json(resp);
+                                            });
                                         } else {
                                             res.json({ exposure: 0 });
                                         }
@@ -135,7 +139,8 @@ exports.debit = [
         let date_time = new Date()
         let headers = req.headers['casino-signature']
         let payload = req.body;
-        let verification = verify_signature(payload, headers, private_key);
+        payload["user_id"] = payload["user"];
+        let verification = verify_signature(payload, headers);
 
         if (verification) {
             try {
@@ -149,6 +154,7 @@ exports.debit = [
                                 'status': 'RS_ERROR_TOKEN_EXPIRED',
                                 'request_uuid': payload['request_uuid']
                             }
+                            response.currency = payload['currency'];
                             res.json(response);
                         } else {
                             let response = {
@@ -156,6 +162,7 @@ exports.debit = [
                                 'status': 'RS_ERROR_INVALID_TOKEN',
                                 'request_uuid': payload['request_uuid']
                             }
+                            response.currency = payload['currency'];
                             res.json(response);
                         }
                     } else {
@@ -165,6 +172,7 @@ exports.debit = [
                                 'status': 'RS_ERROR_WRONG_CURRENCY',
                                 'request_uuid': payload['request_uuid']
                             }
+                            response.currency = payload['currency'];
                             res.json(response);
                         }
 
@@ -174,7 +182,7 @@ exports.debit = [
                                 'status': 'RS_ERROR_WRONG_TYPES',
                                 'request_uuid': payload['request_uuid']
                             }
-
+                            response.currency = payload['currency'];
                             res.json(response);
                         }
 
@@ -190,7 +198,7 @@ exports.debit = [
                             'status': 'RS_ERROR_DUPLICATE_REQUEST',
                             'request_uuid': payload['request_uuid']
                         }
-
+                        response.currency = payload['currency'];
                         res.json(response)
                     } else {
                         walletModel.getTransactionByTransactionUUID(payload).then((prev_tran) => {
@@ -200,18 +208,18 @@ exports.debit = [
                                     'status': 'RS_ERROR_DUPLICATE_TRANSACTION',
                                     'request_uuid': payload['request_uuid']
                                 }
-
+                                response.currency = payload['currency'];
                                 res.json(response)
                             } else {
-                                getBalance(jwt_decoded, payload).then(async (response) => {
+                                getBalance(jwt_decoded, payload).then(async (responsed) => {
 
-                                    console.log("jhhhsvjvsdjvsjv", response)
+                                    console.log("jhhhsvjvsdjvsjv", responsed)
 
                                     await userModel.updateUserCasinoProfit(payload);
 
 
-                                    tran_fields = " (amount, transactionId, roundId, betTime, status, clientId, creditId, winAmount )";
-                                    tran_values = ` ( ${payload.amount}, '${payload.transaction_uuid}',  '${payload.roundId}' ,  NOW() ,  '${payload.status}',  '${payload.user_id}', '${payload.creditId}', '${payload.winAmount || 0}')`;
+                                    let tran_fields = " (amount, transactionId, roundId, betTime, status, clientId, creditId, winAmount )";
+                                    let tran_values = ` ( ${payload.amount}, '${payload.transaction_uuid}',  '${payload.roundId}' ,  NOW() ,  '${payload.status}',  '${payload.user_id}', '${payload.creditId}', '${payload.winAmount || 0}')`;
                                     await walletModel.insertTransactionCbet(tran_fields, tran_values).then(() => { }, (err) => {
                                         if (err.message.includes("Duplicate entry")) {
                                             let response = {
@@ -219,15 +227,17 @@ exports.debit = [
                                                 'status': 'RS_ERROR_DUPLICATE_CREDITID',
                                                 'request_uuid': payload['request_uuid']
                                             }
+                                            response.currency = payload['currency'];
                                             res.json(response)
                                         }
                                     });
 
-                                    let tran_fields = " (balance, request_uuid, transaction_uuid, user_id, rolled_back, transaction_type, supplier_user, supplier_transaction_id )";
-                                    let tran_values = ` ( ${response.balance}, '${payload['request_uuid']}', '${payload.transaction_uuid}', '${payload.user_id}', 'N', 'debit', '${payload.supplier_user}', '${payload.supplier_transaction_id}' )`;
+                                    tran_fields = " (balance, request_uuid, transaction_uuid, user_id, rolled_back, transaction_type, supplier_user, supplier_transaction_id )";
+                                    tran_values = ` ( ${responsed.balance}, '${payload['request_uuid']}', '${payload.transaction_uuid}', '${payload.user_id}', 'N', 'debit', '${payload.supplier_user}', '${payload.supplier_transaction_id}' )`;
                                     await walletModel.insertTransactionFieldValues(tran_fields, tran_values);
+                                    responsed.currency = payload['currency'];
 
-                                    res.json(response);
+                                    res.json(responsed);
 
                                     // res.json(response);
                                 });
@@ -371,6 +381,7 @@ exports.debit = [
                     'status': 'RS_ERROR_UNKNOWN',
                     'request_uuid': payload['request_uuid']
                 }
+                response.currency = payload['currency'];
                 let data = {
                     'user': payload['user_id'],
                     'token': payload['token'],
@@ -389,6 +400,7 @@ exports.debit = [
                 'status': 'RS_ERROR_INVALID_SIGNATURE',
                 'request_uuid': payload['request_uuid']
             }
+            response.currency = payload['currency'];
             res.json(response)
         }
     }
@@ -400,7 +412,8 @@ exports.credit = [
         let date_time = new Date();
         let headers = req.headers;
         let payload = req.body;
-        let verification = verify_signature(payload, headers['casino-signature'], public_key);
+        payload["user_id"] = payload["user"];
+        let verification = verify_signature(payload, headers['casino-signature']);
 
         if (verification) {
             try {
@@ -414,6 +427,7 @@ exports.credit = [
                                 'status': 'RS_ERROR_TOKEN_EXPIRED',
                                 'request_uuid': payload['request_uuid']
                             }
+                            response.currency = payload['currency'];
                             res.json(response);
                         } else {
                             let response = {
@@ -421,6 +435,7 @@ exports.credit = [
                                 'status': 'RS_ERROR_INVALID_TOKEN',
                                 'request_uuid': payload['request_uuid']
                             }
+                            response.currency = payload['currency'];
                             res.json(response);
                         }
                     } else {
@@ -434,7 +449,7 @@ exports.credit = [
                         'status': 'RS_ERROR_WRONG_CURRENCY',
                         'request_uuid': payload['request_uuid']
                     }
-
+                    response.currency = payload['currency'];
                     res.json(response);
                 }
 
@@ -449,7 +464,7 @@ exports.credit = [
                             'status': 'RS_ERROR_DUPLICATE_REQUEST',
                             'request_uuid': payload['request_uuid']
                         }
-
+                        response.currency = payload['currency'];
                         res.json(response)
                     } else {
                         walletModel.getTransactionByTransactionUUID(payload).then(async (prev_tran) => {
@@ -459,7 +474,7 @@ exports.credit = [
                                     'status': 'RS_ERROR_DUPLICATE_TRANSACTION',
                                     'request_uuid': payload['request_uuid']
                                 }
-
+                                response.currency = payload['currency'];
                                 res.json(response)
                             } else {
                                 getBalance(decoded, payload).then(async (responsed) => {
@@ -468,7 +483,7 @@ exports.credit = [
                                     let tran_fields = " (balance, request_uuid, transaction_uuid, user_id, rolled_back, transaction_type, supplier_user, supplier_transaction_id )";
                                     let tran_values = ` ( ${responsed.balance}, '${payload.request_uuid}', '${payload.transaction_uuid}', '${payload.user_id}', 'N', 'credit', '${payload.supplier_user}', '${payload.supplier_transaction_id}' )`;
                                     await walletModel.insertTransactionFieldValues(tran_fields, tran_values);
-
+                                    responsed.currency = payload['currency'];
 
                                     res.json(responsed);
                                 });
@@ -611,7 +626,8 @@ exports.rollback = [
         let date_time = new Date();
         let headers = req.headers;
         let payload = req.body;
-        let verification = verify_signature(payload, headers['casino-signature'], public_key);
+        payload["user_id"] = payload["user"];
+        let verification = verify_signature(payload, headers['casino-signature']);
         let decoded;
         jwt.verify(payload.token, secretKey, (err, decod) => {
             if (err) {
@@ -622,6 +638,7 @@ exports.rollback = [
                         'status': 'RS_ERROR_TOKEN_EXPIRED',
                         'request_uuid': payload['request_uuid']
                     }
+                    response.currency = payload['currency'];
                     res.json(response);
                 } else {
                     let response = {
@@ -629,6 +646,7 @@ exports.rollback = [
                         'status': 'RS_ERROR_INVALID_TOKEN',
                         'request_uuid': payload['request_uuid']
                     }
+                    response.currency = payload['currency'];
                     res.json(response);
                 }
             } else {
@@ -645,13 +663,13 @@ exports.rollback = [
                         'status': 'RS_ERROR_DUPLICATE_TRANSACTION',
                         'request_uuid': payload['request_uuid']
                     }
-
+                    response.currency = payload['currency'];
                     res.json(response)
                 } else {
-                    getBalance(decoded, payload).then(async (response) => {
+                    getBalance(decoded, payload).then(async (responsed) => {
 
                         let tran_fields = " (balance, request_uuid, transaction_uuid, user_id, rolled_back, transaction_type, supplier_user, supplier_transaction_id )";
-                        let tran_values = ` ( ${payload.balance}, '${payload.request_uuid}', '${payload.transaction_uuid}', '${payload.user_id}', 'Y', 'rollback', '${payload.supplier_user}', '${payload.supplier_transaction_id}' )`;
+                        let tran_values = ` ( ${responsed.balance}, '${payload.request_uuid}', '${payload.transaction_uuid}', '${payload.user_id}', 'Y', 'rollback', '${payload.supplier_user}', '${payload.supplier_transaction_id}' )`;
                         console.log("values", tran_values);
                         await walletModel.insertTransactionFieldValues(tran_fields, tran_values);
 
@@ -670,12 +688,13 @@ exports.rollback = [
                                     'status': 'RS_OK',
                                     'request_uuid': payload['transaction_uuid']
                                 }
+                                response.currency = payload['currency'];
 
                                 res.json(response);
                             }
                         });
-
-                        res.json(response);
+                        responsed.currency = payload['currency'];
+                        res.json(responsed);
                     });
                 }
             });
@@ -688,6 +707,8 @@ exports.rollback = [
                 'status': 'RS_ERROR_INVALID_SIGNATURE',
                 'request_uuid': payload['request_uuid']
             }
+            response.currency = payload['currency'];
+
 
             res.json(response);
         }
@@ -867,7 +888,6 @@ function getBalance(jwt_decoded, payload) {
                     console.log(resp);
                     resolve(resp);
                 } else {
-                    console.log("555555555555555555558888888");
                     resolve({ exposure: 0 });
                 }
             }, (err) => {

@@ -57,7 +57,7 @@ function insertTransactionCbet(fields, values) {
 
 function transactionExists(payload) {
     return new Promise((resolve, reject) => {
-        db.query("SELECT * FROM transactions WHERE transaction_uuid ='" + payload['reference_transaction_uuid'] + "'", (error, rows, fields) => {
+        db.query("SELECT * FROM transactions WHERE transaction_uuid ='" + payload['transaction_uuid'] + "'", (error, rows, fields) => {
             if (!!error) {
                 dbFunc.connectionRelease;
                 reject(error);
