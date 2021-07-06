@@ -36,7 +36,7 @@ exports.balance = [
                 walletModel.getWalletByUserToken(payload).then((token) => {
                     if (!token) {
                         let response = {
-                            'user': payload['user'],
+                            'user': payload['user_id'],
                             'status': 'RS_ERROR_INVALID_TOKEN',
                             'request_uuid': payload['request_uuid']
                         }
@@ -48,14 +48,14 @@ exports.balance = [
                                 // console.log(err);
                                 if (err.message == "jwt expired") {
                                     let response = {
-                                        'user': payload['user'],
+                                        'user': payload['user_id'],
                                         'status': 'RS_ERROR_TOKEN_EXPIRED',
                                         'request_uuid': payload['request_uuid']
                                     }
                                     res.json(response);
                                 } else {
                                     let response = {
-                                        'user': payload['user'],
+                                        'user': payload['user_id'],
                                         'status': 'RS_ERROR_INVALID_TOKEN',
                                         'request_uuid': payload['request_uuid']
                                     }
@@ -73,7 +73,7 @@ exports.balance = [
                                             let curr_limit = user[0].curr_limit;
                                             let available_balance = curr_limit - userExposure[0].exposure;
                                             let resp = {
-                                                'user': payload['user'],
+                                                'user': payload['user_id'],
                                                 'status': 'RS_OK',
                                                 'request_uuid': payload['request_uuid'],
                                                 'balance': available_balance * 100000
@@ -145,14 +145,14 @@ exports.debit = [
                         // console.log(err);
                         if (err.message == "jwt expired") {
                             let response = {
-                                'user': payload['user'],
+                                'user': payload['user_id'],
                                 'status': 'RS_ERROR_TOKEN_EXPIRED',
                                 'request_uuid': payload['request_uuid']
                             }
                             res.json(response);
                         } else {
                             let response = {
-                                'user': payload['user'],
+                                'user': payload['user_id'],
                                 'status': 'RS_ERROR_INVALID_TOKEN',
                                 'request_uuid': payload['request_uuid']
                             }
@@ -184,9 +184,9 @@ exports.debit = [
                 });
 
                 walletModel.getTransactionByReqUUID(payload).then((prev_req) => {
-                    if (prev_req.length) {
+                    if (prev_req.length > 0) {
                         let response = {
-                            'user': payload['user'],
+                            'user': payload['user_id'],
                             'status': 'RS_ERROR_DUPLICATE_REQUEST',
                             'request_uuid': payload['request_uuid']
                         }
@@ -194,9 +194,9 @@ exports.debit = [
                         res.json(response)
                     } else {
                         walletModel.getTransactionByTransactionUUID(payload).then((prev_tran) => {
-                            if (prev_tran.length > 1) {
+                            if (prev_tran.length > 0) {
                                 let response = {
-                                    'user': payload['user'],
+                                    'user': payload['user_id'],
                                     'status': 'RS_ERROR_DUPLICATE_TRANSACTION',
                                     'request_uuid': payload['request_uuid']
                                 }
@@ -211,12 +211,21 @@ exports.debit = [
                                     
 
                                     let tran_fields = " (balance, request_uuid, transaction_uuid, user_id, rolled_back, transaction_type, supplier_user, supplier_transaction_id )";
-                                    let tran_values = ` ( ${payload.amount}, '${payload.user_id}', '${payload.transaction_uuid}', '${payload.user_id}', 'N', 'debit', '${payload.supplier_user}', '${payload.supplier_transaction_id}' )`;
+                                    let tran_values = ` ( ${payload.amount}, '${payload['request_uuid']}', '${payload.transaction_uuid}', '${payload.user_id}', 'N', 'debit', '${payload.supplier_user}', '${payload.supplier_transaction_id}' )`;
                                     await walletModel.insertTransactionFieldValues(tran_fields, tran_values);
 
                                     tran_fields = " (amount, transactionId, roundId, betTime, status, clientId, creditId, winAmount )";
                                     tran_values = ` ( ${payload.amount}, '${payload.transaction_uuid}',  '${payload.roundId}' ,  NOW() ,  '${payload.status}',  '${payload.user_id}', '${payload.creditId}', '${payload.winAmount || 0}')`;
-                                    await walletModel.insertTransactionCbet(tran_fields, tran_values);
+                                    await walletModel.insertTransactionCbet(tran_fields, tran_values).then(()=>{},(err)=>{
+                                        if(err.message.includes("Duplicate entry")){
+                                            let response = {
+                                                'user': payload['user_id'],
+                                                'status': 'RS_ERROR_DUPLICATE_CREDITID',
+                                                'request_uuid': payload['request_uuid']
+                                            }            
+                                            res.json(response) 
+                                        }
+                                    });
 
 
                                     res.json(response);
@@ -402,14 +411,14 @@ exports.credit = [
                         // console.log(err);
                         if (err.message == "jwt expired") {
                             let response = {
-                                'user': payload['user'],
+                                'user': payload['user_id'],
                                 'status': 'RS_ERROR_TOKEN_EXPIRED',
                                 'request_uuid': payload['request_uuid']
                             }
                             res.json(response);
                         } else {
                             let response = {
-                                'user': payload['user'],
+                                'user': payload['user_id'],
                                 'status': 'RS_ERROR_INVALID_TOKEN',
                                 'request_uuid': payload['request_uuid']
                             }
@@ -422,7 +431,7 @@ exports.credit = [
 
                 if (payload['currency'] != 'KRW') {
                     let response = {
-                        'user': payload['user'],
+                        'user': payload['user_id'],
                         'status': 'RS_ERROR_WRONG_CURRENCY',
                         'request_uuid': payload['request_uuid']
                     }
@@ -436,7 +445,7 @@ exports.credit = [
                 walletModel.getTransactionByReqUUID(payload).then((prev_req) => {
                     if (prev_req.length) {
                         let response = {
-                            'user': payload['user'],
+                            'user': payload['user_id'],
                             'status': 'RS_ERROR_DUPLICATE_REQUEST',
                             'request_uuid': payload['request_uuid']
                         }
@@ -446,7 +455,7 @@ exports.credit = [
                         walletModel.getTransactionByTransactionUUID(payload).then(async (prev_tran) => {
                             if (prev_tran.length) {
                                 let response = {
-                                    'user': payload['user'],
+                                    'user': payload['user_id'],
                                     'status': 'RS_ERROR_DUPLICATE_TRANSACTION',
                                     'request_uuid': payload['request_uuid']
                                 }
@@ -566,13 +575,13 @@ exports.credit = [
                 // });
             } catch (err) {
                 let response = {
-                    'user': payload['user'],
+                    'user': payload['user_id'],
                     'status': 'RS_ERROR_UNKNOWN',
                     'request_uuid': payload['request_uuid']
                 }
 
                 let data = {
-                    'user': payload['user'],
+                    'user': payload['user_id'],
                     'token': payload['token'],
                     'date_time': JSON.stringify(new Date()),
                     'error': JSON.stringify(err.stack)
@@ -585,7 +594,7 @@ exports.credit = [
             }
         } else {
             let response = {
-                'user': payload['user'],
+                'user': payload['user_id'],
                 'status': 'RS_ERROR_INVALID_SIGNATURE',
                 'request_uuid': payload['request_uuid']
             }
@@ -608,14 +617,14 @@ exports.rollback = [
                 // console.log(err);
                 if (err.message == "jwt expired") {
                     let response = {
-                        'user': payload['user'],
+                        'user': payload['user_id'],
                         'status': 'RS_ERROR_TOKEN_EXPIRED',
                         'request_uuid': payload['request_uuid']
                     }
                     res.json(response);
                 } else {
                     let response = {
-                        'user': payload['user'],
+                        'user': payload['user_id'],
                         'status': 'RS_ERROR_INVALID_TOKEN',
                         'request_uuid': payload['request_uuid']
                     }
@@ -631,7 +640,7 @@ exports.rollback = [
             walletModel.getTransactionByReqUUID(payload).then(async (prev_req) => {
                 if (prev_req.length) {
                     let response = {
-                        'user': payload['user'],
+                        'user': payload['user_id'],
                         'status': 'RS_ERROR_DUPLICATE_REQUEST',
                         'request_uuid': payload['request_uuid']
                     }
@@ -845,7 +854,7 @@ function getBalance(jwt_decoded, payload) {
                     let curr_limit = user[0].curr_limit;
                     let available_balance = curr_limit - userExposure[0].exposure;
                     let resp = {
-                        'user': payload['user'],
+                        'user': payload['user_id'],
                         'status': 'RS_OK',
                         'request_uuid': payload['request_uuid'],
                         'balance': available_balance * 100000
