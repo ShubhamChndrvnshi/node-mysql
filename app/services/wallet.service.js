@@ -210,10 +210,6 @@ exports.debit = [
                                     await userModel.updateUserCasinoProfit(payload);
                                     
 
-                                    let tran_fields = " (balance, request_uuid, transaction_uuid, user_id, rolled_back, transaction_type, supplier_user, supplier_transaction_id )";
-                                    let tran_values = ` ( ${payload.amount}, '${payload['request_uuid']}', '${payload.transaction_uuid}', '${payload.user_id}', 'N', 'debit', '${payload.supplier_user}', '${payload.supplier_transaction_id}' )`;
-                                    await walletModel.insertTransactionFieldValues(tran_fields, tran_values);
-
                                     tran_fields = " (amount, transactionId, roundId, betTime, status, clientId, creditId, winAmount )";
                                     tran_values = ` ( ${payload.amount}, '${payload.transaction_uuid}',  '${payload.roundId}' ,  NOW() ,  '${payload.status}',  '${payload.user_id}', '${payload.creditId}', '${payload.winAmount || 0}')`;
                                     await walletModel.insertTransactionCbet(tran_fields, tran_values).then(()=>{},(err)=>{
@@ -227,6 +223,9 @@ exports.debit = [
                                         }
                                     });
 
+                                    let tran_fields = " (balance, request_uuid, transaction_uuid, user_id, rolled_back, transaction_type, supplier_user, supplier_transaction_id )";
+                                    let tran_values = ` ( ${payload.amount}, '${payload['request_uuid']}', '${payload.transaction_uuid}', '${payload.user_id}', 'N', 'debit', '${payload.supplier_user}', '${payload.supplier_transaction_id}' )`;
+                                    await walletModel.insertTransactionFieldValues(tran_fields, tran_values);
 
                                     res.json(response);
 
