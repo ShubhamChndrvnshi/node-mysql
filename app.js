@@ -18,7 +18,7 @@ if(cluster.isMaster){
 	})
 }else{
 	app.listen( PORT, function() {
-        console.log("server connected to port " + PORT);
+        cluster.isMaster ? console.log("server connected to port " + PORT) : console.log("child process: "+cluster.worker.id);
     });
 }
 

@@ -12,6 +12,7 @@ const session = require("express-session");
 const walletRouter = require("../app/routes/thirdParty.route");
 const thirdPartyRouter = require("../app/routes/wallet.route");
 const indexRouter  = require("../app/routes/index.route");
+const cluster = require("cluster");
 
 // var schedule = require('node-schedule');
  
@@ -20,7 +21,7 @@ const indexRouter  = require("../app/routes/index.route");
 // });
 
 dbfunc.connectionCheck.then((data) =>{
-  logger.info(`DB connection status: ${data}`);
+	cluster.isMaster ? logger.info(`DB connection status: ${data}`): {} ;
  }).catch((err) => {
   logger.error(err);
  });
