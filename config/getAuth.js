@@ -125,11 +125,13 @@ const getAuth = (req, res, next) => {
       })
     }
   } else {
-    res.json({
-      "code": 404,
-      "status": "Casino-Signature NOT FOUND",
-    });
-  }
+    let response = {
+        'user': payload['user_id'],
+        'status': 'RS_ERROR_TOKEN_NOT_FOUND',
+        'request_uuid': payload['request_uuid']
+    }
+    res.json(response);
+}
 }
 
 module.exports = getAuth;

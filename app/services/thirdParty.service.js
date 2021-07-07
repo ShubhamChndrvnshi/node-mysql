@@ -54,44 +54,26 @@ exports.gameList = [
   (req, res) => {
     try {
       // let payload = jwt.decode(req.headers['x-casino-signature'])
-      try {
-        jwt.verify(req.body.token, process.env.JWT_SECRET, (err, decoded) => {
-          if (err) {
-            throw err;
-          } else {
-            let payload = { "partner_id": req.body.partner_id };
-            let url = 'http://stg.dreamcasino.live/games/list'
-            let sign = sign_data(payload)
-            // let headers = { 'casino-signature': base64encode(sign) }
-            // response = reqs.post(url, headers = headers, json = payload)
-            var data = JSON.stringify(payload);
-            var config = {
-              method: 'post',
-              url: url,
-              headers: {
-                'casino-signature': base64encode(sign),
-                'Content-Type': 'application/json',
-              },
-              data: data
-            };
+      let payload = { "partner_id": req.body.partner_id };
+      let url = 'http://stg.dreamcasino.live/games/list'
+      let sign = sign_data(payload)
+      // let headers = { 'casino-signature': base64encode(sign) }
+      // response = reqs.post(url, headers = headers, json = payload)
+      var data = JSON.stringify(payload);
+      var config = {
+        method: 'post',
+        url: url,
+        headers: {
+          'casino-signature': base64encode(sign),
+          'Content-Type': 'application/json',
+        },
+        data: data
+      };
 
-            axios(config)
-              .then(function (response) {
-                res.json(response.data);
-              })
-          }
-        });
-      } catch (err) {
-        if (err.message === "jwt expired") {
-          res.json({
-            'user': payload['user'],
-            'status': 'RS_ERROR_TOKEN_EXPIRED',
-          });
-        } else {
-          console.log(err);
-          res.json(err);
-        }
-      }
+      axios(config)
+        .then(function (response) {
+          res.json(response.data);
+        })
       // res.json(JSON.parse(response.text))
     } catch (err) {
       res.json({ 'error': 'Unauthorised Access' })

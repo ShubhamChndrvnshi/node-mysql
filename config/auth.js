@@ -123,6 +123,13 @@ const auth = (req, res, next) => {
                       }
                 });
             })
+        }else{
+            let response = {
+                'user': payload['user_id'],
+                'status': 'RS_ERROR_TOKEN_NOT_FOUND',
+                'request_uuid': payload['request_uuid']
+            }
+            res.json(response);
         }
     }
 }
