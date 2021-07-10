@@ -399,7 +399,6 @@ exports.rollback = [
         let date_time = new Date();
         let headers = req.headers;
         let payload = req.body;
-        payload["user"] = payload["user"];
         let data = JSON.stringify(payload);
         console.log( data);
         let verification = verifySignature(data, headers['casino-signature']);
