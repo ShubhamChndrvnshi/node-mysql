@@ -15,7 +15,7 @@ var userModel = {
 function updateUserCasinoProfit(payload){
     return new Promise((resolve,reject) => {
         
-        db.query("UPDATE client set curr_limit = curr_limit -"+payload.amount+" where id='"+payload.user_id+"'",(error,rows,fields)=>{
+        db.query("UPDATE client set curr_limit = curr_limit -"+payload.amount+" where id='"+payload.user+"'",(error,rows,fields)=>{
             if(!!error) {
                 dbFunc.connectionRelease;
                 reject(error);
@@ -29,7 +29,7 @@ function updateUserCasinoProfit(payload){
 /**************************************** */
 function updateUserProfit(payload){
     return new Promise((resolve,reject) => {
-        let query = "UPDATE client set curr_limit = curr_limit + "+payload.amount+" where id='"+payload.user_id+"'";
+        let query = "UPDATE client set curr_limit = curr_limit + "+payload.amount+" where id='"+payload.user+"'";
         console.log(query);
         db.query(query,(error,rows,fields)=>{
             if(!!error) {

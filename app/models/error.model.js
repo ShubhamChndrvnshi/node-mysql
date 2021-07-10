@@ -13,7 +13,7 @@ const errorModel = {
 
 function getWalletByUserToken(payload) {
     return new Promise((resolve,reject) => {
-        db.query("SELECT * FROM client WHERE id ='"+payload['user_id']+"' AND token = '"+payload['token']+"'",(error,rows,fields)=>{
+        db.query("SELECT * FROM client WHERE id ='"+payload['user']+"' AND token = '"+payload['token']+"'",(error,rows,fields)=>{
             if(!!error) {
                 dbFunc.connectionRelease;
                 reject(error);
@@ -27,7 +27,7 @@ function getWalletByUserToken(payload) {
 /************************************** */
 function insertError(payload) {
      return new Promise((resolve,reject) => {
-         db.query("INSERT INTO casino_errors(user,token,date_time,error)VALUES('"+payload.user+"','"+payload.token+"','"+payload.date_time+"','"+payload.error+"')",(error,rows,fields)=>{
+         db.query("INSERT INTO casino_errors(user,token,date_time,error)VALUES('"+payload.user+"','"+payload.token+"','NOW()','"+payload.error+"')",(error,rows,fields)=>{
             if(error) {
                 dbFunc.connectionRelease;
                 reject(error);

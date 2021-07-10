@@ -30,7 +30,7 @@ const NodeRSA = require('node-rsa');
 //   console.log(encrpted);
 // }
 const auth = (req, res, next) => {
-    const credentials = req.body.user_id && req.body.password;
+    const credentials = req.body.user && req.body.password;
     console.log(req.headers);
     if (credentials) {
         walletModel.getWalletByUserByPass(req.body).then((data) => {
@@ -41,7 +41,7 @@ const auth = (req, res, next) => {
                 const jwtPayload = {
                     id: user.id,
                     _id: user.id,
-                    user_id: user.id,
+                    user: user.id,
                 };
                 // console.log("jwtPayload", jwtPayload);
                 const jwtData = {
@@ -50,8 +50,8 @@ const auth = (req, res, next) => {
                 const secret = process.env.JWT_SECRET;
                 //Generated JWT token with Payload and secret.
                 let token = jwt.sign(jwtPayload, secret, jwtData);
-                // signToken({user_id: user.id, token: token});
-                walletModel.updateUserToken(req.body.user_id, token).then((data) => {
+                // signToken({user: user.id, token: token});
+                walletModel.updateUserToken(req.body.user, token).then((data) => {
                     logger.info("User token update: ");
                     logger.info(data);
                 }, (err) => {
@@ -81,7 +81,7 @@ const auth = (req, res, next) => {
                     data = data[0];
                     if (data.expired) {
                         let response = {
-                            'user': payload['user_id'],
+                            'user': payload['user'],
                             'status': 'RS_ERROR_TOKEN_EXPIRED',
                             'request_uuid': payload['request_uuid']
                         }
@@ -93,14 +93,14 @@ const auth = (req, res, next) => {
                         // console.log(err);
                         if (err.message == "jwt expired") {
                             let response = {
-                                'user': payload['user_id'],
+                                'user': payload['user'],
                                 'status': 'RS_ERROR_TOKEN_EXPIRED',
                                 'request_uuid': payload['request_uuid']
                             }
                             res.json(response);
                         } else {
                             let response = {
-                                'user': payload['user_id'],
+                                'user': payload['user'],
                                 'status': 'RS_ERROR_INVALID_TOKEN',
                                 'request_uuid': payload['request_uuid']
                             }
@@ -114,7 +114,7 @@ const auth = (req, res, next) => {
                             next();
                           }else{
                             res.json({
-                              'user': payload['user_id'],
+                              'user': payload['user'],
                             'status': 'RS_ERROR_INVALID_USER_TOKEN',
                             'request_uuid': payload['request_uuid']
                             })
@@ -125,7 +125,7 @@ const auth = (req, res, next) => {
             })
         }else{
             let response = {
-                'user': payload['user_id'],
+                'user': payload['user'],
                 'status': 'RS_ERROR_TOKEN_NOT_FOUND',
                 'request_uuid': payload['request_uuid']
             }

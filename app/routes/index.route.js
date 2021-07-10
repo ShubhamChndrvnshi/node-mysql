@@ -2,58 +2,96 @@ const express = require("express");
 const path = require("path");
 const router = express.Router();
 const fs = require("fs");
-var axios = require('axios');
-var qs = require('qs');
-var HTMLParser = require('node-html-parser');
+const {base64encode} = require('nodejs-base64');
+// const crypto = require("crypto");
+const crypto = require('crypto');
+
+
+function createSignature(data) {
+    let sign = crypto.createSign('SHA256');
+    sign.write(JSON.stringify(data));
+    sign.end();
+    const key = fs.readFileSync(private_keyPath, "utf8");;
+    let sign_str = sign.sign(key, 'base64');
+    console.log(sign_str);
+    return sign_str;
+}
+
+function verifySignature(data, sign) {
+
+    const pubkey = fs.readFileSync(public_keyPath, "utf8");
+    let verifier = crypto.createVerify('SHA256');
+    verifier.update(data);
+    return verifier.verify(pubkey, sign, 'base64');
+
+}
+
+// data = {
+//     partner_id: 'REPLACE_YOUR_PARTNER_ID',
+// }
+
+// axios.post(
+//     'http://83.136.253.37/games/list',
+//     data,
+//     {
+//         headers: {
+//             'Content-Type': 'application/json',
+//             'Casino-Signature': createSignature(data)
+//         }
+//     }
+// ).then(response => {
+//     // HERE YOU'LL GET GAME LIST
+//     console.log(response);
+// }).then(error => {
+//     console.log(error);
+// });
+
+
 
 /* GET home page. */
 router.get("/", function (req, res) {
     res.sendFile(path.join(__dirname + "/../../public/index.html"));
 });
 
+let private_keyPath = path.resolve("./app/services/PrivateKey.pem");
+let public_keyPath = path.resolve("./app/services/PublicKey.pem");
+
+
 router.post("/sign/token", async (req, res) => {
-    let private_keyPath = path.resolve("./app/services/ProductionPrivateKey.pem");
-    let public_keyPath = path.resolve("./app/services/ProductionPublicKey.pem");
-    const publicKey = fs.readFileSync(public_keyPath, "utf8");
-    const privateKey = fs.readFileSync(private_keyPath, "utf8");
-    var data = qs.stringify({
-        'methodName': 'RSA_SIGN_VERIFY_MESSAGEE',
-        'encryptdecryptparameter': 'decryprt',
-        'publickeyparam': publicKey,
-        'privatekeyparam': privateKey,
-        'message': JSON.stringify(req.body),
-        'cipherparameter': 'SHA256withRSA'
-    });
-    var config = {
-        method: 'post',
-        url: 'https://8gwifi.org/RSAFunctionality',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        data: data
-    };
-
-    axios(config).then(function (response) {
-        console.log(response.data);
-        let html = HTMLParser.parse(response.data);
-        let signed = html.childNodes[2].childNodes[0]._rawText;
-        res.json({signed: signed});
-    }).catch(function (error) {
-        console.log(error);
-    });  
+    try{
+        console.log(req.body);
+        const signature = createSignature(req.body);
+        console.log(`signature for '${JSON.stringify(req.body)}' is '${signature}'"`);
+        res.json({signed: (signature)})
+    }catch(err){
+        console.log(err);
+    }
 })
 
-router.post("/verify/token", (req, res) => {
-    let public_keyPath = path.resolve("./app/services/ProductionPublicKey.pem");
-    let sign = req.headers['casino-signature'];
-    console.log(sign);
-    const pubkey = fs.readFileSync(public_keyPath);
-    verifier = crypto.createVerify('SHA256');
-    verifier.update(JSON.stringify(req.body));
-    res.json({
-        verified: verifier.verify(pubkey, sign, 'base64')
-    });
+router.post("/verify/token", (req, res) => { // validate sign
+    let signature = req.body.signed;
+    let data = JSON.stringify(req.body.data);
+    const isTrue = verifySignature(data, signature);  
+    res.json({verified: isTrue});
 })
 
+
+// function sign_data(data) {
+//     data = JSON.stringify(data);
+//     let sign = crypto.createSign('SHA256');
+// 	sign.write(data);
+// 	sign.end();
+// 	const key = fs.readFileSync(private_keyPath);
+// 	return sign.sign(key, 'base64');
+// }
+
+// function verify_signature(data, signature) {
+//     data = JSON.stringify(data);
+//     const key = fs.readFileSync(private_keyPath);
+//     const pubkey = fs.readFileSync(public_keyPath);
+// 	verifier = crypto.createVerify('SHA256');
+// 	verifier.update(data);
+// 	return verifier.verify (pubkey, signature,'base64');
+// }
 
 module.exports = router;
