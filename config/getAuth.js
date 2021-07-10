@@ -30,6 +30,7 @@ const NodeRSA = require('node-rsa');
 //   console.log(encrpted);
 // }
 const getAuth = (req, res, next) => {
+  let payload = req.body;
   const credentials = req.body.user && req.body.password;
   console.log(req.headers);
   if (credentials) {

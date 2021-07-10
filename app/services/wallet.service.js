@@ -224,7 +224,7 @@ exports.debit = [
                                         }
                                     });
 
-                                    tran_fields = " (balance, request_uuid, transaction_uuid, user_id, rolled_back, transaction_type, supplier_user, supplier_transaction_id )";
+                                    tran_fields = " (balance, request_uuid, transaction_uuid, user, rolled_back, transaction_type, supplier_user, supplier_transaction_id )";
                                     tran_values = ` ( ${responsed.balance}, '${payload['request_uuid']}', '${payload.transaction_uuid}', '${payload.user}', 'N', 'debit', '${payload.supplier_user}', '${payload.supplier_transaction_id}' )`;
                                     await walletModel.insertTransactionFieldValues(tran_fields, tran_values);
                                     responsed.currency = payload['currency'];
@@ -348,7 +348,7 @@ exports.credit = [
                                 await userModel.updateUserProfit(payload).then((data) => { console.log(data); }, (err) => { console.log(err); });
                                 getBalance(decoded, payload).then(async (responsed) => {
 
-                                    let tran_fields = " (amount, balance, request_uuid, transaction_uuid, user_id, rolled_back, transaction_type, supplier_user, supplier_transaction_id )";
+                                    let tran_fields = " (amount, balance, request_uuid, transaction_uuid, user, rolled_back, transaction_type, supplier_user, supplier_transaction_id )";
                                     let tran_values = ` ( ${payload.amount}, ${responsed.balance}, '${payload.request_uuid}', '${payload.transaction_uuid}', '${payload.user}', 'N', 'credit', '${payload.supplier_user}', '${payload.supplier_transaction_id}' )`;
                                     await walletModel.insertTransactionFieldValues(tran_fields, tran_values);
                                     responsed.currency = payload['currency'];
@@ -452,7 +452,7 @@ exports.rollback = [
                                 console.log(err);
                             });
                             let responsed = await getBalance(decoded, payload);
-                            let tran_fields = " ( balance, request_uuid, transaction_uuid, user_id, rolled_back, transaction_type )";
+                            let tran_fields = " ( balance, request_uuid, transaction_uuid, user, rolled_back, transaction_type )";
                             let tran_values = ` (  ${responsed.balance}, '${payload.request_uuid}', '${payload.transaction_uuid}', '${payload.user}', 'Y', 'rollback')`;
                             await walletModel.insertTransactionFieldValues(tran_fields, tran_values);
                             console.log("values", tran_values);

@@ -30,6 +30,7 @@ const NodeRSA = require('node-rsa');
 //   console.log(encrpted);
 // }
 const auth = (req, res, next) => {
+    let payload = req.body;
     const credentials = req.body.user && req.body.password;
     console.log(req.headers);
     if (credentials) {
@@ -74,7 +75,6 @@ const auth = (req, res, next) => {
             logger.error(err);
         })
     } else {
-        let payload = req.body;
         if (req.body.token) {
             walletModel.getToken(req.body.token).then((data) => {
                 if (data.length) {
