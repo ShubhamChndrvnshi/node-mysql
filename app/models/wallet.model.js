@@ -1,5 +1,6 @@
 const db = require('../../config/database');
 const dbFunc = require('../../config/db-function');
+const logger = require("../../common/logger");
 
 const walletModel = {
     getWalletByUserByPassword: getWalletByUserByPassword,
@@ -29,7 +30,9 @@ const walletModel = {
 /*********************************** */
 function insertTransactionFieldValues(fields, values) {
     return new Promise((resolve, reject) => {
-        db.query(`INSERT INTO transactions ${fields} VALUES ${values}`, (error, rows, fields) => {
+        let query = `INSERT INTO transactions ${fields} VALUES ${values}`;
+        logger.info(query);
+        db.query(query, (error, rows, fields) => {
             if (!!error) {
                 dbFunc.connectionRelease;
                 reject(error);
@@ -43,7 +46,9 @@ function insertTransactionFieldValues(fields, values) {
 /********************************* */
 function insertTransactionCbet(fields, values) {
     return new Promise((resolve, reject) => {
-        db.query(`INSERT INTO cbet ${fields} VALUES ${values}`, (error, rows, fields) => {
+        let query = `INSERT INTO cbet ${fields} VALUES ${values}`;
+        logger.info(query);
+        db.query(query, (error, rows, fields) => {
             if (!!error) {
                 dbFunc.connectionRelease;
                 reject(error);
@@ -99,7 +104,9 @@ function insertTransaction(payload) {
 /*************************************** */
 function expireUserToken(token) {
     return new Promise((resolve, reject) => {
-        db.query("UPDATE tokens set expired='Y' WHERE token='" + token + "'", (error, rows, fields) => {
+        let query = "UPDATE tokens set expired='Y' WHERE token='" + token + "'";
+        logger.info(query);
+        db.query(query, (error, rows, fields) => {
             if (!!error) {
                 dbFunc.connectionRelease;
                 reject(error);
@@ -127,7 +134,9 @@ function upsertUserToken(payload) {
     fields = fields.slice(0, -1);
     values = values.slice(0, -1);
     return new Promise((resolve, reject) => {
-        db.query(`INSERT IGNORE INTO tokens (${fields}) VALUES (${values})`, (error, rows, fields) => {
+        let query = `INSERT IGNORE INTO tokens (${fields}) VALUES (${values})`;
+        logger.info(query);
+        db.query(query, (error, rows, fields) => {
             if (!!error) {
                 dbFunc.connectionRelease;
                 reject(error);
@@ -142,7 +151,9 @@ function upsertUserToken(payload) {
 /****************************** */
 function getTokenByUserToken(payload) {
     return new Promise((resolve, reject) => {
-        db.query("SELECT * FROM Tokens WHERE username ='" + payload['user'] + "' AND token = '" + payload['token'] + "'", (error, rows, fields) => {
+        let query = "SELECT * FROM Tokens WHERE username ='" + payload['user'] + "' AND token = '" + payload['token'] + "'";
+        logger.info(query);
+        db.query(query, (error, rows, fields) => {
             if (!!error) {
                 dbFunc.connectionRelease;
                 reject(error);
@@ -157,7 +168,9 @@ function getTokenByUserToken(payload) {
 /********************************************** */
 function getToken(token) {
     return new Promise((resolve, reject) => {
-        db.query("SELECT * FROM Tokens WHERE token = '" + token + "'", (error, rows, fields) => {
+        let query = "SELECT * FROM Tokens WHERE token = '" + token + "'";
+        logger.info(query);
+        db.query(query, (error, rows, fields) => {
             if (!!error) {
                 dbFunc.connectionRelease;
                 reject(error);
@@ -171,12 +184,14 @@ function getToken(token) {
 /*************************** */
 function getTransactionByTransactionUUID(payload) {
     return new Promise((resolve, reject) => {
-        db.query("SELECT * FROM transactions WHERE transaction_uuid = '" + payload['transaction_uuid'] + "'", (error, rows, fields) => {
+        let query = "SELECT * FROM transactions WHERE transaction_uuid = '" + payload['transaction_uuid'] + "'";
+        logger.info(query);
+        db.query(query, (error, rows, fields) => {
             if (!!error) {
                 dbFunc.connectionRelease;
                 reject(error);
             } else {
-                // console.log(fields)
+                // logger.info(fields)
                 dbFunc.connectionRelease;
                 resolve(rows);
             }
@@ -186,12 +201,14 @@ function getTransactionByTransactionUUID(payload) {
 /******************************** */
 function getTransactionByTransactionUUIDRollback(payload) {
     return new Promise((resolve, reject) => {
-        db.query("SELECT * FROM transactions WHERE transaction_uuid = '" + payload['transaction_uuid'] + "' AND bet_status IS NULL AND transaction_type = 'credit'", (error, rows, fields) => {
+        let query = "SELECT * FROM transactions WHERE transaction_uuid = '" + payload['transaction_uuid'] + "' AND bet_status IS NULL AND transaction_type = 'credit'";
+        logger.info(query);
+        db.query(query, (error, rows, fields) => {
             if (!!error) {
                 dbFunc.connectionRelease;
                 reject(error);
             } else {
-                // console.log(fields)
+                // logger.info(fields)
                 dbFunc.connectionRelease;
                 resolve(rows);
             }
@@ -202,12 +219,14 @@ function getTransactionByTransactionUUIDRollback(payload) {
 /************************************ */
 function updateTransactionStatusByTransactionUUID(payload) {
     return new Promise((resolve, reject) => {
-        db.query("UPDATE transactions set bet_status = 'U' where transaction_uuid ='" + payload['transaction_uuid'] + "'", (error, rows, fields) => {
+        let query = "UPDATE transactions set bet_status = 'U' where transaction_uuid ='" + payload['transaction_uuid'] + "'";
+        logger.info(query);
+        db.query(query, (error, rows, fields) => {
             if (!!error) {
                 dbFunc.connectionRelease;
                 reject(error);
             } else {
-                // console.log(fields)
+                // logger.info(fields)
                 dbFunc.connectionRelease;
                 resolve(rows);
             }
@@ -222,7 +241,7 @@ function getCreditTransactionByTransactionUUID(payload) {
                 dbFunc.connectionRelease;
                 reject(error);
             } else {
-                // console.log(fields)
+                // logger.info(fields)
                 dbFunc.connectionRelease;
                 resolve(rows);
             }
@@ -232,12 +251,14 @@ function getCreditTransactionByTransactionUUID(payload) {
 /************************ */
 function getTransactionByReqUUID(payload) {
     return new Promise((resolve, reject) => {
-        db.query("SELECT * FROM transactions WHERE request_uuid = '" + payload['request_uuid'] + "'", (error, rows, fields) => {
+        let query = "SELECT * FROM transactions WHERE request_uuid = '" + payload['request_uuid'] + "'";
+        logger.info(query);
+        db.query(query, (error, rows, fields) => {
             if (!!error) {
                 dbFunc.connectionRelease;
                 reject(error);
             } else {
-                // console.log(fields)
+                // logger.info(fields)
                 dbFunc.connectionRelease;
                 resolve(rows);
             }
@@ -251,7 +272,7 @@ function getWalletByUserByToken(payload) {
                 dbFunc.connectionRelease;
                 reject(error);
             } else {
-                // console.log(fields)
+                // logger.info(fields)
                 dbFunc.connectionRelease;
                 resolve(rows);
             }
@@ -262,12 +283,14 @@ function getWalletByUserByToken(payload) {
 /**************************************** */
 function getWalletByUserByPass(payload) {
     return new Promise((resolve, reject) => {
-        db.query("SELECT * FROM client WHERE id = '" + payload['user'] + "' AND token = '" + payload['password'] + "'", (error, rows, fields) => {
+        let query = "SELECT * FROM client WHERE id = '" + payload['user'] + "' AND token = '" + payload['password'] + "'";
+        logger.info(query);
+        db.query(query, (error, rows, fields) => {
             if (!!error) {
                 dbFunc.connectionRelease;
                 reject(error);
             } else {
-                // console.log(fields)
+                // logger.info(fields)
                 dbFunc.connectionRelease;
                 resolve(rows);
             }
@@ -278,12 +301,14 @@ function getWalletByUserByPass(payload) {
 
 function getWalletByUserByPassword(payload) {
     return new Promise((resolve, reject) => {
-        db.query("SELECT * FROM client WHERE id = '" + payload['user'] + "' AND password = '" + payload['password'] + "'", (error, rows, fields) => {
+        let query = "SELECT * FROM client WHERE id = '" + payload['user'] + "' AND password = '" + payload['password'] + "'";
+        logger.info(query);
+        db.query(query, (error, rows, fields) => {
             if (!!error) {
                 dbFunc.connectionRelease;
                 reject(error);
             } else {
-                // console.log(fields)
+                // logger.info(fields)
                 dbFunc.connectionRelease;
                 resolve(rows);
             }
@@ -293,7 +318,9 @@ function getWalletByUserByPassword(payload) {
 /*********************************** */
 function getWalletByUser(payload) {
     return new Promise((resolve, reject) => {
-        db.query("SELECT * FROM client WHERE id = '" + payload['user'] + "'", (error, rows, fields) => {
+        let query = "SELECT * FROM client WHERE id = '" + payload['user'] + "'";
+        logger.info(query);
+        db.query(query, (error, rows, fields) => {
             if (!!error) {
                 dbFunc.connectionRelease;
                 reject(error);
@@ -309,10 +336,10 @@ function getUserExposure(payload) {
     return new Promise((resolve, reject) => {
         let id = payload['user'] || payload['_id']
         let query = "SELECT IFNULL(SUM(exposure),0) AS exposure from exposure Where clientId ='" + id + "' AND status = 1";
-        // console.log(query);
+        logger.info(query);
         db.query(query, (error, rows, fields) => {
             if (!!error) {
-                // console.log(error);
+                // logger.info(error);
                 dbFunc.connectionRelease;
                 reject(error);
             } else {
@@ -328,10 +355,10 @@ function getUserCurrLimit(payload) {
     return new Promise((resolve, reject) => {
         let id = payload['user'] || payload['_id']
         let query = "Select IFNULL(curr_limit,0) from client where id= '" + id + "'";
-        // console.log(query);
+        // logger.info(query);
         db.query(query, (error, rows, fields) => {
             if (!!error) {
-                // console.log(error);
+                // logger.info(error);
                 dbFunc.connectionRelease;
                 reject(error);
             } else {
@@ -344,7 +371,9 @@ function getUserCurrLimit(payload) {
 /******************************** */
 function getWalletByUserToken(payload) {
     return new Promise((resolve, reject) => {
-        db.query("SELECT * FROM client WHERE id ='" + payload['user'] + "' AND token = '" + payload['token'] + "'", (error, rows, fields) => {
+        let query = "SELECT * FROM client WHERE id ='" + payload['user'] + "' AND token = '" + payload['token'] + "'";
+        logger.info(query);
+        db.query(query, (error, rows, fields) => {
             if (!!error) {
                 dbFunc.connectionRelease;
                 reject(error);
@@ -358,7 +387,9 @@ function getWalletByUserToken(payload) {
 
 function addWallet(user) {
     return new Promise((resolve, reject) => {
-        db.query("INSERT INTO client(name,age,state,country)VALUES('" + user.name + "','" + user.age + "','" + user.state + "','" + user.country + "')", (error, rows, fields) => {
+        let query = "INSERT INTO client(name,age,state,country)VALUES('" + user.name + "','" + user.age + "','" + user.state + "','" + user.country + "')";
+        logger.info(query);
+        db.query(query, (error, rows, fields) => {
             if (error) {
                 dbFunc.connectionRelease;
                 reject(error);
@@ -373,7 +404,9 @@ function addWallet(user) {
 /********************************************** */
 function updateUserToken(id, token) {
     return new Promise((resolve, reject) => {
-        db.query("UPDATE Tokens set token='" + token + "' WHERE username='" + id + "'", (error, rows, fields) => {
+        let query ="UPDATE Tokens set token='" + token + "' WHERE username='" + id + "'";
+        logger.info(query);
+        db.query(query, (error, rows, fields) => {
             if (!!error) {
                 dbFunc.connectionRelease;
                 reject(error);
@@ -388,7 +421,9 @@ function updateUserToken(id, token) {
 /*************************************** */
 function subtractBalanceWithCurrent(amount, id) {
     return new Promise((resolve, reject) => {
-        db.query("UPDATE client set curr_limit = curr_limit - " + amount + " where id='" + id + "'", (error, rows, fields) => {
+        let query = "UPDATE client set curr_limit = curr_limit - " + amount + " where id='" + id + "'";
+        logger.info(query);
+        db.query(query, (error, rows, fields) => {
             if (!!error) {
                 dbFunc.connectionRelease;
                 reject(error);

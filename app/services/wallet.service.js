@@ -210,8 +210,8 @@ exports.debit = [
                                     console.log("jhhhsvjvsdjvsjv", responsed)
 
 
-                                    let tran_fields = " (amount, transactionId, roundId, betTime, status, clientId, creditId, winAmount )";
-                                    let tran_values = ` ( ${payload.amount}, '${payload.transaction_uuid}',  '${payload.roundId}' ,  NOW() ,  '${payload.status}',  '${payload.user}', '${payload.creditId}', '${payload.winAmount || 0}')`;
+                                    let tran_fields = " (amount, transactionId, roundId, status, clientId, creditId, winAmount )";
+                                    let tran_values = ` ( ${payload.amount}, '${payload.transaction_uuid}',  '${payload.round}' , 1 ,  '${payload.user}', '${payload.creditId || payload.transaction_uuid}', '${payload.winAmount || 0}')`;
                                     await walletModel.insertTransactionCbet(tran_fields, tran_values).then(() => { }, (err) => {
                                         if (err.message.includes("Duplicate entry")) {
                                             let response = {
@@ -231,7 +231,7 @@ exports.debit = [
 
                                     res.json(responsed);
 
-                                    // res.json(response);
+                                    // res.json(response0);
                                 });
                             }
                         })

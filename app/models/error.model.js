@@ -1,10 +1,10 @@
 const db = require('../../config/database');
 const dbFunc = require('../../config/db-function');
+const logger = require("../../common/logger");
 
 const errorModel = {
    insertError:insertError,
    updateUserToken:updateUserToken,
-   deleteWallet:deleteWallet,
    getWalletByUserToken: getWalletByUserToken,
    insertErrorObject: insertErrorObject,
 }
@@ -27,7 +27,9 @@ function getWalletByUserToken(payload) {
 /************************************** */
 function insertError(payload) {
      return new Promise((resolve,reject) => {
-         db.query("INSERT INTO casino_errors(user,token,date_time,error)VALUES('"+payload.user+"','"+payload.token+"','NOW()','"+payload.error+"')",(error,rows,fields)=>{
+        let query = "INSERT INTO casino_errors (user,token,date_time,error) VALUES ('"+payload.user+"','"+payload.token+"','NOW()','"+payload.error+"')";
+        logger.info(query);
+         db.query(query,(error,rows,fields)=>{
             if(error) {
                 dbFunc.connectionRelease;
                 reject(error);
@@ -54,7 +56,9 @@ function insertErrorObject(payload){
     fields = fields.slice(0, -1);
     values = values.slice(0, -1);
     return new Promise((resolve,reject) => {
-        db.query(`INSERT IGNORE INTO casino_errors (${fields}) VALUES (${values})`,(error,rows,fields)=>{
+        let query = `INSERT IGNORE INTO casino_errors (${fields}) VALUES (${values})`;
+        logger.info(query);
+        db.query(query,(error,rows,fields)=>{
             if(!!error) {
                 dbFunc.connectionRelease;
                 reject(error);
@@ -81,19 +85,6 @@ function updateUserToken(id,token) {
     })
 }
 
-function deleteWallet(id) {
-   return new Promise((resolve,reject) => {
-        db.query("DELETE FROM client WHERE id='"+id+"'",(error,rows,fields)=>{
-            if(!!error) {
-                dbFunc.connectionRelease;
-                reject(error);
-            } else {
-                dbFunc.connectionRelease;
-                resolve(rows);
-            }
-       });    
-    });
-}
 
 
 module.exports = errorModel;
